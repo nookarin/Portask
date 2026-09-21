@@ -12,3 +12,4 @@ coverage/
 .vscode/
 .idea/
 /api/.env
+todo.md
