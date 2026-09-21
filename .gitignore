@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+uploads/
+*.log
+.env
+.env.local
+.env.production
+!.env.example
+.DS_Store
+coverage/
+.vscode/
+.idea/

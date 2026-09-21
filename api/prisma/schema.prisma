@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+  CLIENT
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+}
+
+enum TaskStatus {
+  TO_DO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum DeliverableStatus {
+  DRAFT
+  AWAITING_CLIENT_REVIEW
+  APPROVED
+  CHANGES_REQUESTED
+}
+
+enum UpdateVisibility {
+  INTERNAL
+  CLIENT
+}
+
+model User {
+  id                String            @id @default(cuid())
+  email             String            @unique
+  passwordHash      String
+  name              String
+  role              Role              @default(EMPLOYEE)
+  companyId         String?
+  company           Company?          @relation("CompanyUsers", fields: [companyId], references: [id])
+  memberships       ProjectMember[]
+  assignedTasks     Task[]
+  updates           ProjectUpdate[]
+  deliverables      Deliverable[]
+  comments          Comment[]
+  activityLogs      ActivityLog[]
+  notifications     Notification[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+}
+
+model Company {
+  id        String    @id @default(cuid())
+  name      String
+  users     User[]    @relation("CompanyUsers")
+  projects  Project[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Project {
+  id           String          @id @default(cuid())
+  name         String
+  description  String?
+  companyId    String
+  company      Company         @relation(fields: [companyId], references: [id])
+  status       ProjectStatus   @default(ACTIVE)
+  startDate    DateTime?
+  dueDate      DateTime?
+  progress     Int             @default(0)
+  members      ProjectMember[]
+  tasks        Task[]
+  milestones   Milestone[]
+  updates      ProjectUpdate[]
+  deliverables Deliverable[]
+  activityLogs ActivityLog[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
+}
+
+model Task {
+  id            String       @id @default(cuid())
+  title         String
+  description   String?
+  status        TaskStatus   @default(TO_DO)
+  priority      Priority     @default(MEDIUM)
+  assigneeId    String?
+  assignee      User?        @relation(fields: [assigneeId], references: [id])
+  projectId     String
+  project       Project      @relation(fields: [projectId], references: [id])
+  dueDate       DateTime?
+  clientVisible Boolean      @default(false)
+  updates       ProjectUpdate[] @relation("TaskUpdates")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([projectId])
+  @@index([assigneeId])
+}
+
+model Milestone {
+  id        String   @id @default(cuid())
+  name      String
+  dueDate   DateTime?
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model ProjectUpdate {
+  id         String           @id @default(cuid())
+  title      String
+  body       String
+  progress   Int              @default(0)
+  visibility UpdateVisibility @default(CLIENT)
+  fileUrl    String?
+  projectId  String
+  project    Project          @relation(fields: [projectId], references: [id])
+  authorId   String
+  author     User             @relation(fields: [authorId], references: [id])
+  taskId     String?
+  task       Task?            @relation("TaskUpdates", fields: [taskId], references: [id])
+  comments   Comment[]        @relation("UpdateComments")
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([projectId])
+}
+
+model Deliverable {
+  id           String            @id @default(cuid())
+  name         String
+  description  String?
+  fileUrl      String?
+  deliveryLink String?
+  status       DeliverableStatus @default(DRAFT)
+  feedback     String?
+  projectId    String
+  project      Project           @relation(fields: [projectId], references: [id])
+  uploaderId   String
+  uploader     User              @relation(fields: [uploaderId], references: [id])
+  comments     Comment[]         @relation("DeliverableComments")
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([projectId])
+}
+
+model Comment {
+  id            String          @id @default(cuid())
+  body          String
+  authorId      String
+  author        User            @relation(fields: [authorId], references: [id])
+  deliverableId String?
+  deliverable   Deliverable?    @relation("DeliverableComments", fields: [deliverableId], references: [id])
+  updateId      String?
+  update        ProjectUpdate?  @relation("UpdateComments", fields: [updateId], references: [id])
+  createdAt     DateTime        @default(now())
+
+  @@index([deliverableId])
+  @@index([updateId])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String
+  detail    String?
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
