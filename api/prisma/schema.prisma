@@ -66,7 +66,7 @@ model User {
 
 model Company {
   id        String    @id @default(cuid())
-  name      String
+  name      String    @unique
   users     User[]    @relation("CompanyUsers")
   projects  Project[]
   createdAt DateTime  @default(now())

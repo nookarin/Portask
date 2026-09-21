@@ -11,3 +11,4 @@ uploads/
 coverage/
 .vscode/
 .idea/
+/api/.env

@@ -34,7 +34,7 @@ services:
         condition: service_healthy
     command: >
       sh -c "
-        npx prisma db push --skip-generate &&
+        npx prisma db push --skip-generate --accept-data-loss &&
         npm run seed &&
         npm run dev
       "

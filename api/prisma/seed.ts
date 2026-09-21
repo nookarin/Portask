@@ -47,9 +47,10 @@ async function main() {
   });
 
   const project = await prisma.project.upsert({
-    where: { name: "Website Redesign" },
+    where: { id: "seed-project-1" },
     update: {},
     create: {
+      id: "seed-project-1",
       name: "Website Redesign",
       description: "Full redesign of the Acme marketing site.",
       companyId: company.id,
