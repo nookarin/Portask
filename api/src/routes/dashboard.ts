@@ -37,23 +37,15 @@ router.get(
             author: { select: { id: true, name: true } },
           },
         }),
-        isClient
-          ? prisma.project.findMany({
-              where: projectWhere,
-              orderBy: { updatedAt: "desc" },
-              take: 5,
-              include: {
-                activityLogs: { orderBy: { createdAt: "desc" }, take: 3, include: { user: { select: { id: true, name: true, role: true } } } },
-              },
-            })
-          : prisma.activityLog.findMany({
-              orderBy: { createdAt: "desc" },
-              take: 10,
-              include: {
-                project: { select: { id: true, name: true } },
-                user: { select: { id: true, name: true, role: true } },
-              },
-            }),
+        prisma.activityLog.findMany({
+          where: isClient ? { project: projectWhere } : {},
+          orderBy: { createdAt: "desc" },
+          take: 10,
+          include: {
+            project: { select: { id: true, name: true } },
+            user: { select: { id: true, name: true, role: true } },
+          },
+        }),
       ]);
 
     const myTasks =

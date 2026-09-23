@@ -208,6 +208,16 @@ describe("dashboard", () => {
     const res = await adminAgent.get("/api/dashboard").expect(200);
     expect(res.body.counts.activeProjects).toBeGreaterThanOrEqual(1);
   });
+
+  it("returns flat activity log items for clients", async () => {
+    const res = await clientAAgent.get("/api/dashboard").expect(200);
+    expect(Array.isArray(res.body.recentActivity)).toBe(true);
+    for (const activity of res.body.recentActivity) {
+      expect(activity.user).toBeDefined();
+      expect(activity.action).toBeDefined();
+      expect(activity.projectId).toBeDefined();
+    }
+  });
 });
 
 describe("validation", () => {

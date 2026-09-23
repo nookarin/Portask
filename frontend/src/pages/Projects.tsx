@@ -62,8 +62,8 @@ export default function Projects() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Projects</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Projects</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {user!.role === "CLIENT"
               ? "Projects for your company."
               : "All client projects in the workspace."}
@@ -82,7 +82,7 @@ export default function Projects() {
         aria-label="Search projects"
       />
 
-      {error ? <div className="text-red-600">{error}</div> : null}
+      {error ? <div className="text-red-600 dark:text-red-400">{error}</div> : null}
       {loading ? (
         <Spinner />
       ) : filtered.length === 0 ? (
@@ -93,17 +93,17 @@ export default function Projects() {
             <Link key={p.id} to={`/projects/${p.id}`}>
               <Card className="h-full transition-shadow hover:shadow-md">
                 <div className="mb-2 flex items-start justify-between gap-2">
-                  <h2 className="font-semibold text-slate-800">{p.name}</h2>
+                  <h2 className="font-semibold text-slate-800 dark:text-slate-100">{p.name}</h2>
                   <Badge tone={statusTone[p.status]}>{p.status.replace("_", " ")}</Badge>
                 </div>
-                <p className="mb-3 line-clamp-2 text-sm text-slate-500">
+                <p className="mb-3 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">
                   {p.description || "No description."}
                 </p>
                 <div className="mb-2 flex items-center gap-2">
                   <ProgressBar value={p.progress} />
-                  <span className="text-xs font-medium text-slate-500">{p.progress}%</span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{p.progress}%</span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-400">
+                <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
                   <span>{p.company?.name}</span>
                   {p._count ? (
                     <span>{p._count.tasks} tasks · {p._count.updates} updates</span>
@@ -170,7 +170,7 @@ function CreateProjectModal({
   return (
     <Modal open={open} onClose={onClose} title="New project">
       <form onSubmit={onSubmit} className="space-y-4">
-        {error ? <div className="text-sm text-red-600">{error}</div> : null}
+        {error ? <div className="text-sm text-red-600 dark:text-red-400">{error}</div> : null}
         <div>
           <Label>Project name</Label>
           <input className={formClass} required value={name} onChange={(e) => setName(e.target.value)} />

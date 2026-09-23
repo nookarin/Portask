@@ -70,17 +70,17 @@ export default function ProjectDetail() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-800">{project.name}</h1>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{project.name}</h1>
             <Badge tone={project.status === "ACTIVE" ? "green" : project.status === "ON_HOLD" ? "amber" : project.status === "PLANNING" ? "blue" : "slate"}>
               {project.status.replace("_", " ")}
             </Badge>
           </div>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {project.company.name} · Due {formatDateTime(project.dueDate)}
           </p>
         </div>
         <div className="w-48">
-          <div className="mb-1 flex justify-between text-xs text-slate-500">
+          <div className="mb-1 flex justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>Progress</span>
             <span className="font-semibold">{project.progress}%</span>
           </div>
@@ -88,15 +88,15 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-1 border-b border-slate-200">
+      <div className="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-800">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`rounded-t-md px-4 py-2 text-sm font-medium ${
               tab === t.id
-                ? "border-b-2 border-brand-600 text-brand-600"
-                : "text-slate-500 hover:text-slate-800"
+                ? "border-b-2 border-brand-600 text-brand-600 dark:text-brand-400"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
             {t.label}
@@ -122,7 +122,7 @@ export default function ProjectDetail() {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Card>
-      <h2 className="mb-3 text-lg font-semibold text-slate-800">{title}</h2>
+      <h2 className="mb-3 text-lg font-semibold text-slate-800 dark:text-slate-100">{title}</h2>
       {children}
     </Card>
   );
@@ -157,18 +157,18 @@ function Overview({
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Section title="Description">
-        <p className="whitespace-pre-wrap text-sm text-slate-600">{project.description || "No description yet."}</p>
+        <p className="whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{project.description || "No description yet."}</p>
       </Section>
 
       <Section title="Team">
         {!project.members || project.members.length === 0 ? (
-          <p className="text-sm text-slate-500">No members yet.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No members yet.</p>
         ) : (
           <ul className="space-y-2">
             {project.members.map((m) => (
               <li key={m.id} className="flex items-center justify-between text-sm">
-                <span className="font-medium text-slate-800">{m.user.name}</span>
-                <span className="text-xs capitalize text-slate-500">{m.user.email}</span>
+                <span className="font-medium text-slate-800 dark:text-slate-100">{m.user.name}</span>
+                <span className="text-xs capitalize text-slate-500 dark:text-slate-400">{m.user.email}</span>
               </li>
             ))}
           </ul>
@@ -177,13 +177,13 @@ function Overview({
 
       <Section title="Milestones">
         {(project.milestones?.length ?? 0) === 0 ? (
-          <p className="text-sm text-slate-500">No milestones yet.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No milestones yet.</p>
         ) : (
           <ul className="space-y-2">
             {project.milestones!.map((m) => (
               <li key={m.id} className="flex items-center justify-between text-sm">
-                <span className="text-slate-800">{m.name}</span>
-                <span className="text-xs text-slate-500">{formatDateTime(m.dueDate)}</span>
+                <span className="text-slate-800 dark:text-slate-100">{m.name}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{formatDateTime(m.dueDate)}</span>
               </li>
             ))}
           </ul>
@@ -238,15 +238,15 @@ function TasksTab({ project, isInternal, onChanged }: { project: Project; isInte
             <Card key={t.id} className="flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-slate-800">{t.title}</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-100">{t.title}</span>
                   <Badge tone={taskStatusTone[t.status]}>{t.status.replace("_", " ")}</Badge>
                   <Badge tone={t.priority === "HIGH" ? "red" : t.priority === "MEDIUM" ? "amber" : "slate"}>
                     {t.priority}
                   </Badge>
                   {t.clientVisible ? <Badge tone="blue">Client-visible</Badge> : null}
                 </div>
-                {t.description ? <p className="mt-1 text-sm text-slate-500">{t.description}</p> : null}
-                <div className="mt-1 text-xs text-slate-400">
+                {t.description ? <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.description}</p> : null}
+                <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
                   {t.assignee ? `Assigned to ${t.assignee.name}` : "Unassigned"}
                   {t.dueDate ? ` · Due ${formatDateTime(t.dueDate)}` : ""}
                 </div>
@@ -352,7 +352,7 @@ function CreateTaskModal({
             </select>
           </div>
         </div>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
           <input type="checkbox" checked={clientVisible} onChange={(e) => setClientVisible(e.target.checked)} />
           Client-visible task
         </label>
@@ -398,7 +398,7 @@ function UpdatesTab({ project, isInternal, onChanged }: { project: Project; isIn
     <div className="space-y-4">
       {isInternal ? (
         <Card>
-          <h2 className="mb-3 text-lg font-semibold text-slate-800">Post an update</h2>
+          <h2 className="mb-3 text-lg font-semibold text-slate-800 dark:text-slate-100">Post an update</h2>
           <form onSubmit={postUpdate} className="space-y-3">
             {error ? <Alert>{error}</Alert> : null}
             <div>
@@ -470,34 +470,34 @@ function UpdateCard({ update, onChanged }: { update: ProjectUpdate; onChanged: (
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-semibold text-slate-800">{update.title}</h3>
+        <h3 className="font-semibold text-slate-800 dark:text-slate-100">{update.title}</h3>
         <div className="flex items-center gap-2">
           {update.visibility === "INTERNAL" ? <Badge tone="amber">Internal</Badge> : <Badge tone="green">Client-visible</Badge>}
-          <span className="text-xs text-slate-400">{formatDateTime(update.createdAt)}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{formatDateTime(update.createdAt)}</span>
         </div>
       </div>
-      <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{update.body}</p>
+      <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{update.body}</p>
       <div className="mt-2 flex items-center gap-2">
         <ProgressBar value={update.progress} />
-        <span className="text-xs font-medium text-slate-500">{update.progress}%</span>
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{update.progress}%</span>
       </div>
       {update.fileUrl ? (
-        <a href={update.fileUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-brand-600 hover:underline">
+        <a href={update.fileUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-brand-600 dark:text-brand-400 hover:underline">
           📎 View attachment
         </a>
       ) : null}
-      <div className="mt-2 text-xs text-slate-400">Posted by {update.author.name}</div>
+      <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">Posted by {update.author.name}</div>
 
-      <div className="mt-3 space-y-2 rounded-md bg-slate-50 p-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Comments</div>
-        {update.comments.length === 0 ? <p className="text-xs text-slate-500">No comments yet.</p> : null}
+      <div className="mt-3 space-y-2 rounded-md bg-slate-50 dark:bg-slate-800/60 p-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Comments</div>
+        {update.comments.length === 0 ? <p className="text-xs text-slate-500 dark:text-slate-400">No comments yet.</p> : null}
         {update.comments.map((c) => (
           <div key={c.id} className="flex items-start justify-between gap-2 text-sm">
             <span>
-              <span className="font-medium text-slate-700">{c.author.name}:</span>{" "}
-              <span className="text-slate-600">{c.body}</span>
+              <span className="font-medium text-slate-700 dark:text-slate-200">{c.author.name}:</span>{" "}
+              <span className="text-slate-600 dark:text-slate-300">{c.body}</span>
             </span>
-            <span className="shrink-0 text-xs text-slate-400">{formatDateTime(c.createdAt)}</span>
+            <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{formatDateTime(c.createdAt)}</span>
           </div>
         ))}
         <form onSubmit={submitComment} className="mt-2 flex gap-2">
@@ -609,35 +609,35 @@ function DeliverableCard({
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-semibold text-slate-800">{deliverable.name}</h3>
+        <h3 className="font-semibold text-slate-800 dark:text-slate-100">{deliverable.name}</h3>
         <Badge tone={deliverableTone(deliverable.status)}>{deliverable.status.replace(/_/g, " ")}</Badge>
       </div>
       {deliverable.description ? (
-        <p className="mt-1 text-sm text-slate-500">{deliverable.description}</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{deliverable.description}</p>
       ) : null}
       <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
         {deliverable.fileUrl ? (
-          <a href={deliverable.fileUrl} target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
+          <a href={deliverable.fileUrl} target="_blank" rel="noreferrer" className="text-brand-600 dark:text-brand-400 hover:underline">
             View file
           </a>
         ) : null}
         {deliverable.deliveryLink ? (
-          <a href={deliverable.deliveryLink} target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
+          <a href={deliverable.deliveryLink} target="_blank" rel="noreferrer" className="text-brand-600 dark:text-brand-400 hover:underline">
             Delivery link
           </a>
         ) : null}
-        <span className="text-xs text-slate-400">Uploaded by {deliverable.uploader.name} · {formatDateTime(deliverable.createdAt)}</span>
+        <span className="text-xs text-slate-400 dark:text-slate-500">Uploaded by {deliverable.uploader.name} · {formatDateTime(deliverable.createdAt)}</span>
       </div>
 
       {deliverable.status === "CHANGES_REQUESTED" && deliverable.feedback ? (
-        <div className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <div className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
           <span className="font-semibold">Changes requested:</span> {deliverable.feedback}
         </div>
       ) : null}
 
       {!isInternal && awaiting ? (
-        <div className="mt-3 rounded-md bg-slate-50 p-3">
-          <div className="text-sm font-medium text-slate-700">Review this deliverable</div>
+        <div className="mt-3 rounded-md bg-slate-50 dark:bg-slate-800/60 p-3">
+          <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Review this deliverable</div>
           {!reviewing ? (
             <div className="mt-2 flex gap-2">
               <Button onClick={() => void approve()}>Approve</Button>
@@ -662,16 +662,16 @@ function DeliverableCard({
         </div>
       ) : null}
 
-      <div className="mt-3 space-y-2 rounded-md bg-slate-50 p-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Comments</div>
-        {deliverable.comments.length === 0 ? <p className="text-xs text-slate-500">No comments yet.</p> : null}
+      <div className="mt-3 space-y-2 rounded-md bg-slate-50 dark:bg-slate-800/60 p-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Comments</div>
+        {deliverable.comments.length === 0 ? <p className="text-xs text-slate-500 dark:text-slate-400">No comments yet.</p> : null}
         {deliverable.comments.map((c) => (
           <div key={c.id} className="flex items-start justify-between gap-2 text-sm">
             <span>
-              <span className="font-medium text-slate-700">{c.author.name}:</span>{" "}
-              <span className="text-slate-600">{c.body}</span>
+              <span className="font-medium text-slate-700 dark:text-slate-200">{c.author.name}:</span>{" "}
+              <span className="text-slate-600 dark:text-slate-300">{c.body}</span>
             </span>
-            <span className="shrink-0 text-xs text-slate-400">{formatDateTime(c.createdAt)}</span>
+            <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{formatDateTime(c.createdAt)}</span>
           </div>
         ))}
         <form onSubmit={submitComment} className="mt-2 flex gap-2">
@@ -754,14 +754,14 @@ function ActivityTab({ activities }: { activities: ActivityLog[] }) {
   if (activities.length === 0) return <EmptyState title="No activity recorded yet" />;
   return (
     <Card>
-      <ol className="relative space-y-4 border-l border-slate-200 pl-4">
+      <ol className="relative space-y-4 border-l border-slate-200 dark:border-slate-800 pl-4">
         {activities.map((a) => (
           <li key={a.id} className="text-sm">
-            <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border-2 border-brand-600 bg-white" />
-            <span className="font-medium text-slate-800">{a.user.name}</span>{" "}
-            <span className="text-slate-500">{a.action.replace(/_/g, " ").toLowerCase()}</span>
-            {a.detail ? <span className="text-slate-400"> — {a.detail}</span> : null}
-            <div className="text-xs text-slate-400">{formatDateTime(a.createdAt)}</div>
+            <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border-2 border-brand-600 bg-white dark:bg-slate-900" />
+            <span className="font-medium text-slate-800 dark:text-slate-100">{a.user.name}</span>{" "}
+            <span className="text-slate-500 dark:text-slate-400">{a.action.replace(/_/g, " ").toLowerCase()}</span>
+            {a.detail ? <span className="text-slate-400 dark:text-slate-500"> — {a.detail}</span> : null}
+            <div className="text-xs text-slate-400 dark:text-slate-500">{formatDateTime(a.createdAt)}</div>
           </li>
         ))}
       </ol>

@@ -69,4 +69,45 @@ describe("App routing", () => {
     await userEvent.click(await screen.findByText("Team"));
     expect(await screen.findByText(/Users in the workspace/i)).toBeInTheDocument();
   });
+
+  it("renders the client dashboard with activity without crashing", async () => {
+    const client: User = {
+      id: "u2",
+      email: "client@portask.dev",
+      name: "Cara Client",
+      role: "CLIENT",
+      companyId: "c1",
+    };
+    vi.spyOn(authApi, "me").mockResolvedValueOnce({ user: client });
+    global.fetch = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/dashboard")) {
+        return Promise.resolve(
+          okResponse({
+            counts: { activeProjects: 1, riskProjects: 0, blockedTasks: 0, pendingDeliverables: 0 },
+            recentUpdates: [],
+            recentActivity: [
+              {
+                id: "a1",
+                action: "TASK_CREATED",
+                detail: "Build landing page",
+                projectId: "p1",
+                user: { id: "u1", name: "Ari Admin", role: "ADMIN" },
+                project: { id: "p1", name: "Website" },
+                createdAt: new Date().toISOString(),
+              },
+            ],
+            myTasks: [],
+            tasksDueSoon: [],
+            blockedMyTasks: [],
+            upcomingMilestones: [],
+          })
+        );
+      }
+      return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+    });
+    renderAt("/");
+    expect(await screen.findByText("Project dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Ari Admin")).toBeInTheDocument();
+  });
 });

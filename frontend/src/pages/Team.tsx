@@ -52,29 +52,29 @@ export default function Team() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Team</h1>
-          <p className="text-sm text-slate-500">Users in the workspace.</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Team</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Users in the workspace.</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>Invite user</Button>
       </div>
 
-      {error ? <div className="text-red-600">{error}</div> : null}
+      {error ? <div className="text-red-600 dark:text-red-400">{error}</div> : null}
       {loading ? (
         <Spinner />
       ) : users.length === 0 ? (
         <EmptyState title="No users yet" />
       ) : (
         <Card>
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
             {users.map((u) => (
               <li key={u.id} className="flex items-center justify-between gap-4 py-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-800">{u.name}</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-100">{u.name}</span>
                     <Badge tone={roleTone[u.role]}>{u.role}</Badge>
                   </div>
-                  <div className="text-sm text-slate-500">{u.email}</div>
-                  {u.company ? <div className="text-xs text-slate-400">{u.company.name}</div> : null}
+                  <div className="text-sm text-slate-500 dark:text-slate-400">{u.email}</div>
+                  {u.company ? <div className="text-xs text-slate-400 dark:text-slate-500">{u.company.name}</div> : null}
                 </div>
                 <Button variant="ghost" onClick={() => void removeUser(u.id)}>Remove</Button>
               </li>

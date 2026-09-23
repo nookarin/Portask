@@ -29,13 +29,13 @@ export default function Companies() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Companies</h1>
-          <p className="text-sm text-slate-500">Client companies in the workspace.</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Companies</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Client companies in the workspace.</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>New company</Button>
       </div>
 
-      {error ? <div className="text-red-600">{error}</div> : null}
+      {error ? <div className="text-red-600 dark:text-red-400">{error}</div> : null}
       {loading ? (
         <Spinner />
       ) : companies.length === 0 ? (
@@ -44,9 +44,9 @@ export default function Companies() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {companies.map((c) => (
             <Card key={c.id}>
-              <h2 className="font-semibold text-slate-800">{c.name}</h2>
+              <h2 className="font-semibold text-slate-800 dark:text-slate-100">{c.name}</h2>
               {c._count ? (
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   {c._count.users} user(s) · {c._count.projects} project(s)
                 </p>
               ) : null}

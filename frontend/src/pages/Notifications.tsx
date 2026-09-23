@@ -34,13 +34,13 @@ export default function Notifications() {
     <div className="mx-auto max-w-2xl space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Notifications</h1>
-          <p className="text-sm text-slate-500">{unread} unread</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Notifications</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{unread} unread</p>
         </div>
         {unread > 0 ? <Button variant="secondary" onClick={() => void markAllRead()}>Mark all read</Button> : null}
       </div>
 
-      {error ? <div className="text-red-600">{error}</div> : null}
+      {error ? <div className="text-red-600 dark:text-red-400">{error}</div> : null}
       {loading ? (
         <Spinner />
       ) : items.length === 0 ? (
@@ -49,9 +49,9 @@ export default function Notifications() {
         <div className="space-y-2">
           {items.map((n) => (
             <Card key={n.id} className={`flex items-start justify-between gap-3 ${n.read ? "opacity-60" : ""}`}>
-              <p className="text-sm text-slate-700">{n.message}</p>
+              <p className="text-sm text-slate-700 dark:text-slate-200">{n.message}</p>
               <div className="flex shrink-0 items-center gap-2">
-                <span className="text-xs text-slate-400">{formatDateTime(n.createdAt)}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">{formatDateTime(n.createdAt)}</span>
                 {n.read ? <Badge>Read</Badge> : <Badge tone="blue">New</Badge>}
               </div>
             </Card>

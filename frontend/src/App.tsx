@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
+import { ThemeProvider } from "./theme/ThemeContext";
 import Layout from "./components/Layout";
 import { Spinner } from "./components/ui";
 import Login from "./pages/Login";
@@ -40,46 +41,48 @@ function PublicOnly({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
-          <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
-
-          <Route
-            element={
-              <Protected>
-                <Layout />
-              </Protected>
-            }
-          >
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/projects/:id" element={<ProjectDetail />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/profile" element={<Profile />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
+            <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
 
             <Route
-              path="/companies"
               element={
-                <AdminOnly>
-                  <Companies />
-                </AdminOnly>
+                <Protected>
+                  <Layout />
+                </Protected>
               }
-            />
-            <Route
-              path="/team"
-              element={
-                <AdminOnly>
-                  <Team />
-                </AdminOnly>
-              }
-            />
-          </Route>
+            >
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/profile" element={<Profile />} />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+              <Route
+                path="/companies"
+                element={
+                  <AdminOnly>
+                    <Companies />
+                  </AdminOnly>
+                }
+              />
+              <Route
+                path="/team"
+                element={
+                  <AdminOnly>
+                    <Team />
+                  </AdminOnly>
+                }
+              />
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
