@@ -12,5 +12,7 @@ coverage/
 .vscode/
 .idea/
 /api/.env
+/api/data/
+/api/src/generated/
 todo.md
 PRD.md

@@ -220,6 +220,84 @@ describe("dashboard", () => {
   });
 });
 
+describe("calendar", () => {
+  const wideStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const wideEnd = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+  const feedUrl = `/api/calendar?start=${encodeURIComponent(wideStart)}&end=${encodeURIComponent(wideEnd)}`;
+  let milestoneId: string;
+  let privateTaskId: string;
+
+  it("returns a sorted event feed scoped by role", async () => {
+    const res = await adminAgent.get(feedUrl).expect(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    for (const e of res.body) {
+      expect(e.type).toMatch(/^(TASK|MILESTONE|PROJECT)$/);
+      expect(e.title).toBeTruthy();
+      expect(e.date).toBeTruthy();
+    }
+  });
+
+  it("includes milestones and hides internal tasks from clients", async () => {
+    const milestoneRes = await employeeAgent
+      .post(`/api/projects/${projectId}/milestones`)
+      .send({ name: uniq("Launch"), dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString() })
+      .expect(201);
+    milestoneId = milestoneRes.body.id;
+
+    const taskRes = await employeeAgent
+      .post(`/api/projects/${projectId}/tasks`)
+      .send({ title: uniq("Secret internal"), clientVisible: false })
+      .expect(201);
+    privateTaskId = taskRes.body.id;
+    await employeeAgent
+      .patch(`/api/tasks/${privateTaskId}`)
+      .send({ dueDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString() })
+      .expect(200);
+
+    const employeeFeed = await employeeAgent.get(feedUrl).expect(200);
+    expect(employeeFeed.body.some((e: { id: string }) => e.id === `milestone-${milestoneId}`)).toBe(true);
+    expect(employeeFeed.body.some((e: { id: string }) => e.id === `task-${privateTaskId}`)).toBe(true);
+  });
+
+  it("the owning client sees the milestone but not internal tasks", async () => {
+    const a = await clientAAgent.get(feedUrl).expect(200);
+    expect(a.body.some((e: { id: string }) => e.id === `milestone-${milestoneId}`)).toBe(true);
+    expect(a.body.some((e: { id: string }) => e.id === `task-${privateTaskId}`)).toBe(false);
+  });
+
+  it("the foreign client sees neither", async () => {
+    const b = await clientBAgent.get(feedUrl).expect(200);
+    expect(b.body.some((e: { id: string }) => e.id === `milestone-${milestoneId}`)).toBe(false);
+    expect(b.body.some((e: { id: string }) => e.id === `task-${privateTaskId}`)).toBe(false);
+  });
+});
+
+describe("profile", () => {
+  it("updates the current user's profile", async () => {
+    const res = await employeeAgent
+      .patch("/api/profile")
+      .send({ name: "Renamed Employee", avatarUrl: "/uploads/avatar.png" })
+      .expect(200);
+    expect(res.body.user.name).toBe("Renamed Employee");
+    expect(res.body.user.avatarUrl).toBe("/uploads/avatar.png");
+    expect(res.body.user.passwordHash).toBeUndefined();
+  });
+
+  it("rejects a password change with the wrong current password", async () => {
+    await employeeAgent
+      .patch("/api/profile")
+      .send({ currentPassword: "nope-wrong", newPassword: "brandnew123" })
+      .expect(401);
+  });
+
+  it("allows clients to view and update their profile", async () => {
+    const view = await clientAAgent.get("/api/profile").expect(200);
+    expect(view.body.user.email).toBe(email("clienta"));
+    const updated = await clientAAgent.patch("/api/profile").send({ avatarUrl: "/uploads/ca.png" }).expect(200);
+    expect(updated.body.user.avatarUrl).toBe("/uploads/ca.png");
+  });
+});
+
 describe("validation", () => {
   it("rejects invalid input with 400", async () => {
     const res = await adminAgent

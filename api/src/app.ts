@@ -22,6 +22,9 @@ import {
 import notificationsRouter from "./routes/notifications.js";
 import dashboardRouter from "./routes/dashboard.js";
 import uploadRouter from "./routes/upload.js";
+import settingsRouter from "./routes/settings.js";
+import calendarRouter from "./routes/calendar.js";
+import profileRouter from "./routes/profile.js";
 
 export const app = express();
 
@@ -48,6 +51,9 @@ app.use("/api/deliverables", deliverableCommentsRouter);
 app.use("/api/notifications", notificationsRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/upload", uploadRouter);
+app.use("/api/settings", settingsRouter);
+app.use("/api/calendar", calendarRouter);
+app.use("/api/profile", profileRouter);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -6,12 +6,12 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && node -e \"const fs=require('fs');fs.cpSync('src/generated','dist/generated',{recursive:true})\"",
     "start": "node dist/index.js",
     "test": "prisma db push --skip-generate --accept-data-loss && vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "prisma generate && prisma generate --schema prisma/schema.mysql.prisma && prisma generate --schema prisma/schema.sqlite.prisma && prisma generate --schema prisma/schema.mongodb.prisma",
     "prisma:push": "prisma db push",
     "seed": "tsx prisma/seed.ts"
   },

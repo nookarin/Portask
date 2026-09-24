@@ -20,6 +20,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  avatarUrl?: string | null;
   role: Role;
   companyId?: string | null;
   company?: { id: string; name: string } | null;
@@ -125,6 +126,20 @@ export interface Notification {
   createdAt: string;
 }
 
+export type CalendarEventType = "TASK" | "MILESTONE" | "PROJECT";
+
+export interface CalendarEvent {
+  id: string;
+  type: CalendarEventType;
+  title: string;
+  date: string;
+  projectId: string;
+  projectName: string;
+  status?: string;
+  priority?: string;
+  assigneeName?: string | null;
+}
+
 export interface DashboardData {
   counts: {
     activeProjects: number;
@@ -138,4 +153,36 @@ export interface DashboardData {
   tasksDueSoon: Task[];
   blockedMyTasks: Task[];
   upcomingMilestones: (Milestone & { project: Pick<Project, "id" | "name"> })[];
+}
+
+export type DbProvider = "postgresql" | "mysql" | "sqlite" | "mongodb";
+export type DbPreset = "sqlite" | "postgresql" | "mysql" | "mongodb" | "custom";
+
+export interface DbSettingsInput {
+  preset: DbPreset;
+  customProvider?: DbProvider;
+  host?: string;
+  port?: number;
+  database?: string;
+  user?: string;
+  password?: string;
+  folder?: string;
+  connectionString?: string;
+}
+
+export interface DbStatus {
+  provider: DbProvider;
+  label: string;
+  source: "default" | "custom";
+  configuredAt?: string;
+  healthy: boolean;
+  connection: string;
+  configPath: string;
+}
+
+export interface DbTestResult {
+  ok: boolean;
+  provider: DbProvider;
+  label: string;
+  connection: string;
 }

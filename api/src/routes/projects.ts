@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { prisma } from "../db.js";
+import { activeDbProvider, prisma } from "../db.js";
 import { ApiError, wrap } from "../lib/errors.js";
 import {
   requireAuth,
@@ -32,7 +32,12 @@ router.get(
 
     const where: Prisma.ProjectWhereInput = {};
     if (req.user!.role === "CLIENT") where.companyId = req.user!.companyId ?? "";
-    if (q) where.name = { contains: q, mode: "insensitive" };
+    if (q) {
+      where.name =
+        activeDbProvider() === "mongodb"
+          ? { contains: q }
+          : { contains: q, mode: "insensitive" };
+    }
     if (status) where.status = status;
 
     const projects = await prisma.project.findMany({

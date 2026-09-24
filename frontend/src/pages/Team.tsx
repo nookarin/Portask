@@ -9,6 +9,7 @@ interface ManagedUser {
   name: string;
   email: string;
   role: Role;
+  avatarUrl?: string | null;
   company?: { id: string; name: string } | null;
 }
 
@@ -70,6 +71,22 @@ export default function Team() {
               <li key={u.id} className="flex items-center justify-between gap-4 py-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
+                    {u.avatarUrl ? (
+                      <img
+                        src={u.avatarUrl}
+                        alt={u.name}
+                        className="h-7 w-7 rounded-full border border-slate-200 object-cover dark:border-slate-700"
+                      />
+                    ) : (
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+                        {u.name
+                          .split(" ")
+                          .map((p) => p[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()}
+                      </span>
+                    )}
                     <span className="font-medium text-slate-800 dark:text-slate-100">{u.name}</span>
                     <Badge tone={roleTone[u.role]}>{u.role}</Badge>
                   </div>

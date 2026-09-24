@@ -1,8 +1,12 @@
 import { get, post, del, patch, uploadFile } from "./client";
 import type {
   ActivityLog,
+  CalendarEvent,
   Company,
   DashboardData,
+  DbSettingsInput,
+  DbStatus,
+  DbTestResult,
   Deliverable,
   Milestone,
   Notification,
@@ -135,6 +139,34 @@ export const notificationsApi = {
 
 export const dashboardApi = {
   get: () => get<DashboardData>("/api/dashboard"),
+};
+
+export const calendarApi = {
+  get: (range?: { start?: string; end?: string }) => {
+    const params = new URLSearchParams();
+    if (range?.start) params.set("start", range.start);
+    if (range?.end) params.set("end", range.end);
+    const qs = params.toString();
+    return get<CalendarEvent[]>(`/api/calendar${qs ? `?${qs}` : ""}`);
+  },
+};
+
+export const settingsApi = {
+  db: () => get<DbStatus>("/api/settings"),
+  test: (input: DbSettingsInput) => post<DbTestResult>("/api/settings/test", input),
+  apply: (input: DbSettingsInput, force = false) =>
+    post<DbStatus>("/api/settings", { ...input, force }),
+  reset: () => post<DbStatus>("/api/settings/reset"),
+};
+
+export const profileApi = {
+  get: () => get<{ user: User }>("/api/profile"),
+  update: (data: {
+    name?: string;
+    avatarUrl?: string | null;
+    currentPassword?: string;
+    newPassword?: string;
+  }) => patch<{ user: User }>("/api/profile", data),
 };
 
 export { uploadFile };

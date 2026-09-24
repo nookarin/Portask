@@ -2,7 +2,7 @@
 
 B2B client portal for creative agencies and service businesses. Manage projects internally and let clients securely view progress, give feedback, and approve deliverables.
 
-Built with React, Node.js, Express, PostgreSQL (Prisma), Docker, and GitHub Actions CI/CD. Full specification: [PRD.md](PRD.md).
+Built with React, Node.js, Express, PostgreSQL (Prisma), Docker, and GitHub Actions CI/CD.
 
 ## Architecture
 
@@ -116,6 +116,8 @@ Secrets are injected via Docker Compose or GitHub Actions secrets; the `.env` fi
 | `/api/deliverables/:id/comments`          | POST               | Comment on a deliverable                 |
 | `/api/projects/:id/activity`              | GET                | Activity timeline                        |
 | `/api/notifications`                      | GET, POST          | Notifications / mark-read                |
+| `/api/calendar`                           | GET                | Role-scoped task/milestone/project dates |
+| `/api/profile`                            | GET, PATCH         | View/update profile, change password      |
 | `/api/dashboard`                          | GET                | Role-aware dashboard metrics             |
 
 Access rules: `ADMIN`/`EMPLOYEE` are agency staff with full access; `CLIENT` is restricted to projects of their own company. Every request is authorized server-side.

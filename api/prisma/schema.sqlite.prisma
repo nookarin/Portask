@@ -1,68 +1,31 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/sqlite"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN
-  EMPLOYEE
-  CLIENT
-}
-
-enum ProjectStatus {
-  PLANNING
-  ACTIVE
-  ON_HOLD
-  COMPLETED
-}
-
-enum TaskStatus {
-  TO_DO
-  IN_PROGRESS
-  BLOCKED
-  DONE
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-enum DeliverableStatus {
-  DRAFT
-  AWAITING_CLIENT_REVIEW
-  APPROVED
-  CHANGES_REQUESTED
-}
-
-enum UpdateVisibility {
-  INTERNAL
-  CLIENT
-}
-
 model User {
-  id                String            @id @default(cuid())
-  email             String            @unique
-  passwordHash      String
-  name              String
-  avatarUrl         String?
-  role              Role              @default(EMPLOYEE)
-  companyId         String?
-  company           Company?          @relation("CompanyUsers", fields: [companyId], references: [id])
-  memberships       ProjectMember[]
-  assignedTasks     Task[]
-  updates           ProjectUpdate[]
-  deliverables      Deliverable[]
-  comments          Comment[]
-  activityLogs      ActivityLog[]
-  notifications     Notification[]
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id            String           @id @default(cuid())
+  email         String           @unique
+  passwordHash  String
+  name          String
+  avatarUrl     String?
+  role          String           @default("EMPLOYEE")
+  companyId     String?
+  company       Company?         @relation("CompanyUsers", fields: [companyId], references: [id])
+  memberships   ProjectMember[]
+  assignedTasks Task[]
+  updates       ProjectUpdate[]
+  deliverables  Deliverable[]
+  comments      Comment[]
+  activityLogs  ActivityLog[]
+  notifications Notification[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 }
 
 model Company {
@@ -80,7 +43,7 @@ model Project {
   description  String?
   companyId    String
   company      Company         @relation(fields: [companyId], references: [id])
-  status       ProjectStatus   @default(ACTIVE)
+  status       String          @default("ACTIVE")
   startDate    DateTime?
   dueDate      DateTime?
   progress     Int             @default(0)
@@ -106,20 +69,20 @@ model ProjectMember {
 }
 
 model Task {
-  id            String       @id @default(cuid())
+  id            String           @id @default(cuid())
   title         String
   description   String?
-  status        TaskStatus   @default(TO_DO)
-  priority      Priority     @default(MEDIUM)
+  status        String           @default("TO_DO")
+  priority      String           @default("MEDIUM")
   assigneeId    String?
-  assignee      User?        @relation(fields: [assigneeId], references: [id])
+  assignee      User?            @relation(fields: [assigneeId], references: [id])
   projectId     String
-  project       Project      @relation(fields: [projectId], references: [id])
+  project       Project          @relation(fields: [projectId], references: [id])
   dueDate       DateTime?
-  clientVisible Boolean      @default(false)
-  updates       ProjectUpdate[] @relation("TaskUpdates")
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  clientVisible Boolean          @default(false)
+  updates       ProjectUpdate[]  @relation("TaskUpdates")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   @@index([projectId])
   @@index([assigneeId])
@@ -135,40 +98,40 @@ model Milestone {
 }
 
 model ProjectUpdate {
-  id         String           @id @default(cuid())
+  id         String          @id @default(cuid())
   title      String
   body       String
-  progress   Int              @default(0)
-  visibility UpdateVisibility @default(CLIENT)
+  progress   Int             @default(0)
+  visibility String          @default("CLIENT")
   fileUrl    String?
   projectId  String
-  project    Project          @relation(fields: [projectId], references: [id])
+  project    Project         @relation(fields: [projectId], references: [id])
   authorId   String
-  author     User             @relation(fields: [authorId], references: [id])
+  author     User            @relation(fields: [authorId], references: [id])
   taskId     String?
-  task       Task?            @relation("TaskUpdates", fields: [taskId], references: [id])
-  comments   Comment[]        @relation("UpdateComments")
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+  task       Task?           @relation("TaskUpdates", fields: [taskId], references: [id])
+  comments   Comment[]       @relation("UpdateComments")
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
   @@index([projectId])
 }
 
 model Deliverable {
-  id           String            @id @default(cuid())
+  id           String      @id @default(cuid())
   name         String
   description  String?
   fileUrl      String?
   deliveryLink String?
-  status       DeliverableStatus @default(DRAFT)
+  status       String      @default("DRAFT")
   feedback     String?
   projectId    String
-  project      Project           @relation(fields: [projectId], references: [id])
+  project      Project     @relation(fields: [projectId], references: [id])
   uploaderId   String
-  uploader     User              @relation(fields: [uploaderId], references: [id])
-  comments     Comment[]         @relation("DeliverableComments")
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  uploader     User        @relation(fields: [uploaderId], references: [id])
+  comments     Comment[]   @relation("DeliverableComments")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   @@index([projectId])
 }

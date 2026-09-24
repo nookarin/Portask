@@ -10,8 +10,10 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import Calendar from "./pages/Calendar";
 import Companies from "./pages/Companies";
 import Team from "./pages/Team";
+import Settings from "./pages/Settings";
 import type { ReactNode } from "react";
 
 function Protected({ children }: { children: ReactNode }) {
@@ -58,6 +60,7 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/calendar" element={<Calendar />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/profile" element={<Profile />} />
 
@@ -74,6 +77,14 @@ export default function App() {
                 element={
                   <AdminOnly>
                     <Team />
+                  </AdminOnly>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <AdminOnly>
+                    <Settings />
                   </AdminOnly>
                 }
               />

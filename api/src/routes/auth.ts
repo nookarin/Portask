@@ -10,11 +10,12 @@ import type { RequestHandler } from "express";
 
 const router = Router();
 
-function sanitize(user: User & { company?: { id: string; name: string } | null }) {
+export function sanitizeUser(user: User & { company?: { id: string; name: string } | null }) {
   return {
     id: user.id,
     email: user.email,
     name: user.name,
+    avatarUrl: user.avatarUrl ?? null,
     role: user.role,
     companyId: user.companyId,
     company: user.company ?? null,
@@ -59,7 +60,7 @@ const register: RequestHandler = wrap(async (req, res) => {
   });
 
   res.cookie(COOKIE_NAME, signToken(user.id, user.role), cookieOptions());
-  res.status(201).json({ user: sanitize(user) });
+  res.status(201).json({ user: sanitizeUser(user) });
 });
 
 const loginSchema = z.object({
@@ -79,7 +80,7 @@ const login: RequestHandler = wrap(async (req, res) => {
   if (!valid) throw new ApiError(401, "Invalid email or password.");
 
   res.cookie(COOKIE_NAME, signToken(user.id, user.role), cookieOptions());
-  res.json({ user: sanitize(user) });
+  res.json({ user: sanitizeUser(user) });
 });
 
 const logout: RequestHandler = (_req, res) => {
@@ -88,7 +89,7 @@ const logout: RequestHandler = (_req, res) => {
 };
 
 const me: RequestHandler = (req, res) => {
-  res.json({ user: sanitize(req.user! as User & { company?: { id: string; name: string } | null }) });
+  res.json({ user: sanitizeUser(req.user! as User & { company?: { id: string; name: string } | null }) });
 };
 
 router.post("/register", register);

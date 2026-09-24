@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { prisma } from "../db.js";
+import { pingActiveDb } from "../db.js";
 
 const router = Router();
 
 router.get("/", async (_req, res) => {
   let db = "down";
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    await pingActiveDb();
     db = "up";
   } catch {
     db = "down";

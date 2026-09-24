@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import { Router } from "express";
 import multer from "multer";
 import { wrap } from "../lib/errors.js";
-import { requireInternal } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const uploadDir = path.resolve(process.cwd(), "uploads");
 fs.mkdirSync(uploadDir, { recursive: true });
@@ -26,7 +26,7 @@ const router = Router();
 
 router.post(
   "/",
-  requireInternal,
+  requireAuth,
   upload.single("file"),
   wrap(async (req, res) => {
     if (!req.file) {

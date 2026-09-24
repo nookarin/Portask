@@ -29,6 +29,7 @@ services:
       - "5000:5000"
     volumes:
       - uploads:/app/uploads
+      - api-data:/app/data
     depends_on:
       db:
         condition: service_healthy
@@ -58,3 +59,4 @@ services:
 volumes:
   pgdata:
   uploads:
+  api-data:

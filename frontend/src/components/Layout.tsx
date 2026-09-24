@@ -1,16 +1,18 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import ThemeToggle from "./ThemeToggle";
 
 const navItems: { to: string; label: string; end?: boolean }[] = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/projects", label: "Projects" },
+  { to: "/calendar", label: "Calendar" },
   { to: "/notifications", label: "Notifications" },
 ];
 
 const adminItems: { to: string; label: string; end?: boolean }[] = [
   { to: "/companies", label: "Companies" },
   { to: "/team", label: "Team" },
+  { to: "/settings", label: "Database" },
 ];
 
 export default function Layout() {
@@ -70,13 +72,23 @@ export default function Layout() {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <div className="text-right text-sm">
-              <div className="font-semibold text-slate-800 dark:text-slate-100">{user.name}</div>
-              <div className="text-xs capitalize text-slate-500 dark:text-slate-400">{user.role.toLowerCase()}</div>
-            </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
-              {initials}
-            </div>
+            <Link to="/profile" className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800" title="Your profile">
+              <div className="text-right text-sm">
+                <div className="font-semibold text-slate-800 dark:text-slate-100">{user.name}</div>
+                <div className="text-xs capitalize text-slate-500 dark:text-slate-400">{user.role.toLowerCase()}</div>
+              </div>
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="h-9 w-9 rounded-full border border-slate-200 object-cover dark:border-slate-700"
+                />
+              ) : (
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+                  {initials}
+                </div>
+              )}
+            </Link>
             <button
               onClick={handleLogout}
               className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
