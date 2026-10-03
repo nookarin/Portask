@@ -25,6 +25,9 @@ services:
       PORT: 5000
       FRONTEND_URL: http://localhost:5173
       NODE_ENV: development
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@portask.dev}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_NAME: ${ADMIN_NAME:-Ari Admin}
     ports:
       - "5000:5000"
     volumes:

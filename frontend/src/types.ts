@@ -156,7 +156,7 @@ export interface DashboardData {
 }
 
 export type DbProvider = "postgresql" | "mysql" | "sqlite" | "mongodb";
-export type DbPreset = "sqlite" | "postgresql" | "mysql" | "mongodb" | "custom";
+export type DbPreset = "sqlite" | "postgresql" | "supabase" | "mysql" | "mongodb" | "custom";
 
 export interface DbSettingsInput {
   preset: DbPreset;
@@ -185,4 +185,59 @@ export interface DbTestResult {
   provider: DbProvider;
   label: string;
   connection: string;
+  warnings?: string[];
+}
+
+export interface DbInspectResult {
+  ok: boolean;
+  warnings: string[];
+}
+
+export type PublicCommentStatus = "PENDING" | "APPROVED" | "SPAM";
+
+export interface ProgressReport {
+  id: string;
+  title: string;
+  intro?: string | null;
+  token: string;
+  enabled: boolean;
+  expiresAt?: string | null;
+  projectId: string;
+  createdById: string;
+  project?: Pick<Project, "id" | "name">;
+  _count?: { updates: number; deliverables: number; comments: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReportDetail extends ProgressReport {
+  updates: { updateId: string; update: Pick<ProjectUpdate, "id" | "title" | "body" | "progress" | "fileUrl" | "createdAt"> }[];
+  deliverables: { deliverableId: string; deliverable: Pick<Deliverable, "id" | "name" | "description" | "fileUrl" | "status" | "createdAt"> }[];
+  comments: PublicComment[];
+  availableUpdates: (Pick<ProjectUpdate, "id" | "title" | "visibility" | "createdAt">)[];
+  availableDeliverables: (Pick<Deliverable, "id" | "name" | "status" | "createdAt">)[];
+}
+
+export interface PublicComment {
+  id: string;
+  authorName: string;
+  body: string;
+  status?: PublicCommentStatus;
+  createdAt: string;
+}
+
+export interface PublicReportData {
+  title: string;
+  intro?: string | null;
+  project: {
+    name: string;
+    status: ProjectStatus;
+    startDate?: string | null;
+    dueDate?: string | null;
+    progress: number;
+  };
+  updates: Pick<ProjectUpdate, "id" | "title" | "body" | "progress" | "fileUrl" | "createdAt">[];
+  deliverables: Pick<Deliverable, "id" | "name" | "description" | "fileUrl" | "status" | "createdAt">[];
+  comments: PublicComment[];
+  updatedAt: string;
 }

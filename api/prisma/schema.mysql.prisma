@@ -46,6 +46,63 @@ enum UpdateVisibility {
   CLIENT
 }
 
+enum PublicCommentStatus {
+  PENDING
+  APPROVED
+  SPAM
+}
+
+model ProgressReport {
+  id           String              @id @default(cuid())
+  title        String
+  intro        String?
+  token        String              @unique
+  enabled      Boolean             @default(true)
+  expiresAt    DateTime?
+  projectId    String
+  project      Project             @relation(fields: [projectId], references: [id])
+  createdById  String
+  createdBy    User                @relation("ReportAuthor", fields: [createdById], references: [id])
+  updates      ReportUpdate[]
+  deliverables ReportDeliverable[]
+  comments     PublicComment[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([projectId])
+}
+
+model ReportUpdate {
+  reportId String
+  updateId String
+  report   ProgressReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  update   ProjectUpdate  @relation(fields: [updateId], references: [id], onDelete: Cascade)
+
+  @@id([reportId, updateId])
+}
+
+model ReportDeliverable {
+  reportId      String
+  deliverableId String
+  report        ProgressReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  deliverable   Deliverable    @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  @@id([reportId, deliverableId])
+}
+
+model PublicComment {
+  id         String              @id @default(cuid())
+  reportId   String
+  report     ProgressReport      @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  authorName String
+  body       String
+  status     PublicCommentStatus @default(PENDING)
+  ipHash     String
+  createdAt  DateTime            @default(now())
+
+  @@index([reportId, status])
+}
+
 model User {
   id                String            @id @default(cuid())
   email             String            @unique
@@ -62,6 +119,7 @@ model User {
   comments          Comment[]
   activityLogs      ActivityLog[]
   notifications     Notification[]
+  createdReports    ProgressReport[]   @relation("ReportAuthor")
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 }
@@ -91,6 +149,7 @@ model Project {
   updates      ProjectUpdate[]
   deliverables Deliverable[]
   activityLogs ActivityLog[]
+  reports     ProgressReport[]
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 }
@@ -149,6 +208,7 @@ model ProjectUpdate {
   taskId     String?
   task       Task?            @relation("TaskUpdates", fields: [taskId], references: [id])
   comments   Comment[]        @relation("UpdateComments")
+  reports    ReportUpdate[]
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
 
@@ -168,6 +228,7 @@ model Deliverable {
   uploaderId   String
   uploader     User              @relation(fields: [uploaderId], references: [id])
   comments     Comment[]         @relation("DeliverableComments")
+  reports     ReportDeliverable[]
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 

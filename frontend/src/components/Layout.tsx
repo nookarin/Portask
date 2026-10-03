@@ -2,9 +2,10 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import ThemeToggle from "./ThemeToggle";
 
-const navItems: { to: string; label: string; end?: boolean }[] = [
+const navItems: { to: string; label: string; end?: boolean; internalOnly?: boolean }[] = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/projects", label: "Projects" },
+  { to: "/reports", label: "Public reports", internalOnly: true },
   { to: "/calendar", label: "Calendar" },
   { to: "/notifications", label: "Notifications" },
 ];
@@ -46,11 +47,13 @@ export default function Layout() {
           <span className="text-lg font-bold text-slate-800 dark:text-slate-100">Portask</span>
         </div>
         <nav className="space-y-1">
-          {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className={linkBase}>
-              {item.label}
-            </NavLink>
-          ))}
+          {navItems
+            .filter((item) => !item.internalOnly || user.role !== "CLIENT")
+            .map((item) => (
+              <NavLink key={item.to} to={item.to} end={item.end} className={linkBase}>
+                {item.label}
+              </NavLink>
+            ))}
           {user.role === "ADMIN" ? (
             <>
               <div className="pt-3 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Admin</div>

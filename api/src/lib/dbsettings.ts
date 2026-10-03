@@ -5,7 +5,7 @@ import { z } from "zod";
 export const DB_PROVIDERS = ["postgresql", "mysql", "sqlite", "mongodb"] as const;
 export type DbProvider = (typeof DB_PROVIDERS)[number];
 
-export const DB_PRESETS = ["sqlite", "postgresql", "mysql", "mongodb", "custom"] as const;
+export const DB_PRESETS = ["sqlite", "postgresql", "supabase", "mysql", "mongodb", "custom"] as const;
 export type DbPreset = (typeof DB_PRESETS)[number];
 
 export const dbPresetSchema = z.enum(DB_PRESETS);
@@ -48,6 +48,7 @@ export function providerForPreset(preset: DbPreset, customProvider?: DbProvider)
     case "sqlite":
       return "sqlite";
     case "postgresql":
+    case "supabase":
       return "postgresql";
     case "mysql":
       return "mysql";
@@ -92,12 +93,64 @@ function customConnection(input: DbSettingsInput): string {
   return input.connectionString ?? "";
 }
 
+function requireConnectionString(input: DbSettingsInput, label: string): string {
+  const value = input.connectionString?.trim();
+  if (!value) {
+    throw new DbSettingsError(`A ${label} connection string is required.`);
+  }
+  return value;
+}
+
+const SUPABASE_TRANSACTION_POOLER_PORT = 6543;
+
+/**
+ * Supabase exposes a transaction pooler (6543) and a session pooler (5432).
+ * Prisma relies on prepared statements, which the transaction pooler rejects,
+ * so surface a warning instead of failing later with an opaque network error.
+ */
+export function inspectSupabaseUrl(url: string): { ok: boolean; warnings: string[] } {
+  const warnings: string[] = [];
+  let parsed: URL;
+  try {
+    parsed = new URL(url.trim());
+  } catch {
+    return { ok: false, warnings: ["That is not a valid URL."] };
+  }
+
+  if (!/^postgres(ql)?:$/.test(parsed.protocol)) {
+    warnings.push("Supabase connection strings normally start with postgresql://");
+  }
+  if (!parsed.hostname.endsWith(".supabase.com") && !parsed.hostname.includes(".pooler.supabase.")) {
+    warnings.push("The host does not look like a Supabase project (expected *.supabase.com).");
+  }
+  if (parsed.port === String(SUPABASE_TRANSACTION_POOLER_PORT)) {
+    warnings.push(
+      `Port ${SUPABASE_TRANSACTION_POOLER_PORT} is Supabase's transaction pooler. It does not support prepared statements, so Prisma queries will fail intermittently. Use the session pooler on port 5432 instead.`
+    );
+  }
+  if (!parsed.password) {
+    warnings.push("No password found. Supabase requires the database password, not your account password.");
+  }
+
+  return { ok: true, warnings };
+}
+
+export class DbSettingsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DbSettingsError";
+  }
+}
+
 export function resolveDb(input: DbSettingsInput): ResolvedDb {
   const provider = providerForPreset(input.preset, input.customProvider);
   let connectionString: string;
   switch (input.preset) {
     case "postgresql":
       connectionString = sqlConnection(input, "postgresql");
+      break;
+    case "supabase":
+      connectionString = requireConnectionString(input, "supabase");
       break;
     case "mysql":
       connectionString = sqlConnection(input, "mysql");

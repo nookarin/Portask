@@ -25,8 +25,14 @@ import uploadRouter from "./routes/upload.js";
 import settingsRouter from "./routes/settings.js";
 import calendarRouter from "./routes/calendar.js";
 import profileRouter from "./routes/profile.js";
+import { reportsRouter, publicReportsRouter } from "./routes/reports.js";
 
 export const app = express();
+
+// Only trust forwarding headers when a proxy is actually declared in front of the
+// API, so `req.secure` (Secure cookie flag) and `req.ip` (rate limiting) reflect the
+// browser's connection instead of the proxy's plain-HTTP hop.
+if (env.TRUST_PROXY > 0) app.set("trust proxy", env.TRUST_PROXY);
 
 app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
 app.use(cookieParser());
@@ -54,6 +60,8 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/settings", settingsRouter);
 app.use("/api/calendar", calendarRouter);
 app.use("/api/profile", profileRouter);
+app.use("/api/reports", reportsRouter);
+app.use("/public/report", publicReportsRouter);
 
 app.use(notFound);
 app.use(errorHandler);

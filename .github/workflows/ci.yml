@@ -137,6 +137,9 @@ jobs:
             export IMAGE_TAG=${{ github.sha }}
             export JWT_SECRET=${{ secrets.JWT_SECRET }}
             export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            export ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+            export ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+            export ADMIN_NAME=${{ vars.ADMIN_NAME }}
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml run --rm api npx prisma db push --skip-generate
             docker compose -f docker-compose.prod.yml up -d

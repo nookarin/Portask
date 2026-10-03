@@ -5,6 +5,7 @@ import type { DbPreset, DbProvider, DbSettingsInput } from "../types";
 
 const PRESET_OPTIONS: { value: DbPreset; title: string; description: string }[] = [
   { value: "sqlite", title: "Local Database", description: "SQLite file stored on the server" },
+  { value: "supabase", title: "Supabase", description: "Paste your project's connection string" },
   { value: "postgresql", title: "PostgreSQL", description: "Self-hosted or managed Postgres" },
   { value: "mongodb", title: "MongoDB", description: "MongoDB / Atlas (requires replica set)" },
   { value: "mysql", title: "MySQL", description: "MySQL or MariaDB server" },
@@ -34,10 +35,11 @@ export default function Settings() {
   const [connectionString, setConnectionString] = useState("");
   const [force, setForce] = useState(false);
 
-  const [testing, setTesting] = useState(false);
+const [testing, setTesting] = useState(false);
   const [applying, setApplying] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [testResult, setTestResult] = useState<string>("");
+  const [testResult, setTestResult] = useState("");
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [applyMsg, setApplyMsg] = useState("");
 
   async function load() {
@@ -60,8 +62,15 @@ export default function Settings() {
     setPreset(p);
     setTestResult("");
     setApplyMsg("");
+    setWarnings([]);
     const portDefault = p === "postgresql" || p === "mysql" || p === "mongodb" ? PORT_DEFAULTS[p] : undefined;
     if (portDefault) setPort(String(portDefault));
+  }
+
+  function setConnectionStringValue(value: string) {
+    setConnectionString(value);
+    setWarnings([]);
+    setTestResult("");
   }
 
   function buildInput(): DbSettingsInput {
@@ -71,6 +80,7 @@ export default function Settings() {
       case "postgresql":
       case "mysql":
         return { preset, host, port: port ? Number(port) : undefined, database, user, password };
+      case "supabase":
       case "mongodb":
         return { preset, connectionString };
       case "custom":
@@ -78,13 +88,24 @@ export default function Settings() {
     }
   }
 
-async function doTest() {
+async function doInspect() {
+    try {
+      const res = await settingsApi.inspect(buildInput());
+      setWarnings(res.warnings);
+    } catch {
+      setWarnings([]);
+    }
+  }
+
+  async function doTest() {
     setTesting(true);
     setTestResult("");
+    setWarnings([]);
     setError("");
     try {
       const res = await settingsApi.test(buildInput());
       setTestResult(`Connection successful (${res.label}).`);
+      setWarnings(res.warnings ?? []);
     } catch (err) {
       setTestResult("");
       setError(err instanceof Error ? err.message : "Connection test failed.");
@@ -255,13 +276,44 @@ async function doTest() {
             </div>
           ) : null}
 
+          {preset === "supabase" ? (
+            <div className="space-y-3">
+              <div>
+                <Label>Supabase connection string</Label>
+                <textarea
+                  className={formClass}
+                  rows={2}
+                  value={connectionString}
+                  onChange={(e) => setConnectionStringValue(e.target.value)}
+                  onBlur={() => void doInspect()}
+                  placeholder="postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres"
+                />
+                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                  Supabase → Project Settings → Database → Connection string. Choose the{" "}
+                  <span className="font-semibold">session pooler</span> (port 5432), not the transaction
+                  pooler on 6543 — Prisma uses prepared statements, which the transaction pooler rejects.
+                  Paste the URI string with your password filled in.
+                </p>
+              </div>
+              {warnings.length > 0 ? (
+                <div className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+                  <ul className="list-disc space-y-1 pl-4">
+                    {warnings.map((warning) => (
+                      <li key={warning}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           {preset === "mongodb" ? (
             <div>
               <Label>Connection string</Label>
               <input
                 className={formClass}
                 value={connectionString}
-                onChange={(e) => setConnectionString(e.target.value)}
+                onChange={(e) => setConnectionStringValue(e.target.value)}
                 placeholder="mongodb+srv://user:pass@cluster.example.net/portask"
                 required
               />
@@ -288,7 +340,7 @@ async function doTest() {
                   className={formClass}
                   rows={2}
                   value={connectionString}
-                  onChange={(e) => setConnectionString(e.target.value)}
+                  onChange={(e) => setConnectionStringValue(e.target.value)}
                   placeholder="postgresql://user:pass@host:5432/db"
                   required
                 />

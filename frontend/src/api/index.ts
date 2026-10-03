@@ -1,4 +1,4 @@
-import { get, post, del, patch, uploadFile } from "./client";
+import { get, post, put, del, patch, uploadFile } from "./client";
 import type {
   ActivityLog,
   CalendarEvent,
@@ -7,11 +7,17 @@ import type {
   DbSettingsInput,
   DbStatus,
   DbTestResult,
+  DbInspectResult,
   Deliverable,
   Milestone,
   Notification,
+  ProgressReport,
   Project,
   ProjectUpdate,
+  PublicComment,
+  PublicCommentStatus,
+  PublicReportData,
+  ReportDetail,
   Task,
   User,
 } from "../types";
@@ -24,13 +30,8 @@ export const authApi = {
   me: () => get<AuthResponse>("/api/auth/me"),
   login: (email: string, password: string) =>
     post<AuthResponse>("/api/auth/login", { email, password }),
-  register: (data: {
-    name: string;
-    email: string;
-    password: string;
-    role: "ADMIN" | "EMPLOYEE" | "CLIENT";
-    companyName?: string;
-  }) => post<AuthResponse>("/api/auth/register", data),
+  register: (data: { name: string; email: string; password: string; companyName: string }) =>
+    post<AuthResponse>("/api/auth/register", data),
   logout: () => post<{ ok: boolean }>("/api/auth/logout"),
 };
 
@@ -153,6 +154,7 @@ export const calendarApi = {
 
 export const settingsApi = {
   db: () => get<DbStatus>("/api/settings"),
+  inspect: (input: DbSettingsInput) => post<DbInspectResult>("/api/settings/inspect", input),
   test: (input: DbSettingsInput) => post<DbTestResult>("/api/settings/test", input),
   apply: (input: DbSettingsInput, force = false) =>
     post<DbStatus>("/api/settings", { ...input, force }),
@@ -167,6 +169,30 @@ export const profileApi = {
     currentPassword?: string;
     newPassword?: string;
   }) => patch<{ user: User }>("/api/profile", data),
+};
+
+export const reportsApi = {
+  list: () => get<ProgressReport[]>("/api/reports"),
+  get: (id: string) => get<ReportDetail>(`/api/reports/${id}`),
+  create: (data: { projectId: string; title: string; intro?: string; expiresAt?: string | null }) =>
+    post<ProgressReport>("/api/reports", data),
+  update: (
+    id: string,
+    data: Partial<{ title: string; intro: string | null; enabled: boolean; expiresAt: string | null }>
+  ) => patch<ProgressReport>(`/api/reports/${id}`, data),
+  saveCuration: (id: string, data: { updateIds?: string[]; deliverableIds?: string[] }) =>
+    put<ProgressReport>(`/api/reports/${id}/curation`, data),
+  comments: (id: string) => get<PublicComment[]>(`/api/reports/${id}/comments`),
+  moderate: (id: string, commentId: string, status: PublicCommentStatus) =>
+    patch<PublicComment>(`/api/reports/${id}/comments/${commentId}`, { status }),
+  deleteComment: (id: string, commentId: string) =>
+    del<{ ok: boolean }>(`/api/reports/${id}/comments/${commentId}`),
+};
+
+export const publicReportsApi = {
+  view: (token: string) => get<PublicReportData>(`/public/report/${token}`),
+  comment: (token: string, data: { authorName: string; body: string }) =>
+    post<PublicComment>(`/public/report/${token}/comments`, data),
 };
 
 export { uploadFile };

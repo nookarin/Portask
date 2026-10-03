@@ -11,8 +11,7 @@ interface AuthContextValue {
     name: string;
     email: string;
     password: string;
-    role: "ADMIN" | "EMPLOYEE" | "CLIENT";
-    companyName?: string;
+    companyName: string;
   }) => Promise<User>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -46,13 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (data: {
-      name: string;
-      email: string;
-      password: string;
-      role: "ADMIN" | "EMPLOYEE" | "CLIENT";
-      companyName?: string;
-    }) => {
+    async (data: { name: string; email: string; password: string; companyName: string }) => {
       const { user: created } = await authApi.register(data);
       setUser(created);
       return created;

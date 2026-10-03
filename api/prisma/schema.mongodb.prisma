@@ -24,6 +24,7 @@ model User {
   comments      Comment[]
   activityLogs  ActivityLog[]
   notifications Notification[]
+  createdReports ProgressReport[] @relation("ReportAuthor")
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
@@ -52,9 +53,10 @@ model Project {
   milestones   Milestone[]
   updates      ProjectUpdate[]
   deliverables Deliverable[]
-  activityLogs ActivityLog[]
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+activityLogs ActivityLog[]
+  reports     ProgressReport[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 }
 
 model ProjectMember {
@@ -111,6 +113,7 @@ model ProjectUpdate {
   taskId     String?         @db.ObjectId
   task       Task?           @relation("TaskUpdates", fields: [taskId], references: [id])
   comments   Comment[]       @relation("UpdateComments")
+  reports    ReportUpdate[]
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
 
@@ -130,6 +133,7 @@ model Deliverable {
   uploaderId   String      @db.ObjectId
   uploader     User        @relation(fields: [uploaderId], references: [id])
   comments     Comment[]   @relation("DeliverableComments")
+  reports     ReportDeliverable[]
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -173,4 +177,57 @@ model Notification {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model ProgressReport {
+  id           String              @id @default(auto()) @map("_id") @db.ObjectId
+  title        String
+  intro        String?
+  token        String              @unique
+  enabled      Boolean             @default(true)
+  expiresAt    DateTime?
+  projectId    String              @db.ObjectId
+  project      Project             @relation(fields: [projectId], references: [id])
+  createdById  String              @db.ObjectId
+  createdBy    User                @relation("ReportAuthor", fields: [createdById], references: [id])
+  updates      ReportUpdate[]
+  deliverables ReportDeliverable[]
+  comments     PublicComment[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([projectId])
+}
+
+model ReportUpdate {
+  id       String         @id @default(auto()) @map("_id") @db.ObjectId
+  reportId String         @db.ObjectId
+  updateId String         @db.ObjectId
+  report   ProgressReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  update   ProjectUpdate  @relation(fields: [updateId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, updateId])
+}
+
+model ReportDeliverable {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  reportId      String         @db.ObjectId
+  deliverableId String         @db.ObjectId
+  report        ProgressReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  deliverable   Deliverable    @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, deliverableId])
+}
+
+model PublicComment {
+  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  reportId   String         @db.ObjectId
+  report     ProgressReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  authorName String
+  body       String
+  status     String         @default("PENDING")
+  ipHash     String
+  createdAt  DateTime       @default(now())
+
+  @@index([reportId, status])
 }

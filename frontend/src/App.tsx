@@ -14,6 +14,8 @@ import Calendar from "./pages/Calendar";
 import Companies from "./pages/Companies";
 import Team from "./pages/Team";
 import Settings from "./pages/Settings";
+import PublicReport from "./pages/PublicReport";
+import Reports from "./pages/Reports";
 import type { ReactNode } from "react";
 
 function Protected({ children }: { children: ReactNode }) {
@@ -41,6 +43,13 @@ function PublicOnly({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function InternalOnly({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user || user.role === "CLIENT") return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <ThemeProvider>
@@ -49,6 +58,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
             <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
+            <Route path="/r/:token" element={<PublicReport />} />
 
             <Route
               element={
@@ -60,6 +70,7 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/reports" element={<InternalOnly><Reports /></InternalOnly>} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/profile" element={<Profile />} />

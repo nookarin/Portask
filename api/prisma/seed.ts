@@ -4,18 +4,13 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = await bcrypt.hash("admin123", 10);
-
-  const admin = await prisma.user.upsert({
-    where: { email: "admin@portask.dev" },
-    update: {},
-    create: {
-      email: "admin@portask.dev",
-      passwordHash: await bcrypt.hash("admin123", 10),
-      name: "Ari Admin",
-      role: Role.ADMIN,
-    },
-  });
+  // No admin is seeded: the first admin is created by the image bootstrap from
+  // ADMIN_EMAIL/ADMIN_PASSWORD (api/src/lib/bootstrapAdmin.ts) or by an existing
+  // admin through POST /api/users.
+  const admin = await prisma.user.findFirst({ where: { role: Role.ADMIN }, orderBy: { createdAt: "asc" } });
+  if (!admin) {
+    console.warn("No admin account found — set ADMIN_EMAIL/ADMIN_PASSWORD before starting the API.");
+  }
 
   const employee = await prisma.user.upsert({
     where: { email: "employee@portask.dev" },
@@ -146,7 +141,7 @@ async function main() {
   }
 
   console.log("Seeded demo data.");
-  console.log(`  Admin:     ${admin.email}`);
+  console.log(`  Admin:     ${admin?.email ?? "(none yet — set ADMIN_EMAIL/ADMIN_PASSWORD)"}`);
   console.log(`  Employee:  ${employee.email}`);
   console.log(`  Client:    ${client.email} (${company.name})`);
 }

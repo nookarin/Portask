@@ -5,15 +5,12 @@ import { useAuth } from "../auth/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
 import { Alert, Button, formClass, Label } from "../components/ui";
 
-type Role = "ADMIN" | "EMPLOYEE" | "CLIENT";
-
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("EMPLOYEE");
   const [companyName, setCompanyName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -23,13 +20,7 @@ export default function Register() {
     setError("");
     setBusy(true);
     try {
-      await register({
-        name,
-        email,
-        password,
-        role,
-        companyName: role === "CLIENT" ? companyName : undefined,
-      });
+      await register({ name, email, password, companyName });
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed.");
@@ -53,6 +44,9 @@ export default function Register() {
 
         <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {error ? <Alert>{error}</Alert> : null}
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Client accounts are created here. If you are an agency, ask your administrator for an invite.
+          </p>
           <div>
             <Label>Full name</Label>
             <input className={formClass} required value={name} onChange={(e) => setName(e.target.value)} />
@@ -81,25 +75,15 @@ export default function Register() {
             />
           </div>
           <div>
-            <Label>I am a…</Label>
-            <select className={formClass} value={role} onChange={(e) => setRole(e.target.value as Role)}>
-              <option value="EMPLOYEE">Employee (agency)</option>
-              <option value="CLIENT">Client</option>
-              <option value="ADMIN">Admin (agency)</option>
-            </select>
+            <Label>Company name</Label>
+            <input
+              className={formClass}
+              required
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Acme Inc."
+            />
           </div>
-          {role === "CLIENT" ? (
-            <div>
-              <Label>Company name</Label>
-              <input
-                className={formClass}
-                required
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="Acme Inc."
-              />
-            </div>
-          ) : null}
           <Button type="submit" disabled={busy} className="w-full">
             {busy ? "Creating account…" : "Create account"}
           </Button>

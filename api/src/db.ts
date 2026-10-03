@@ -10,12 +10,13 @@ import { env } from "./env.js";
 import { ApiError } from "./lib/errors.js";
 import {
   DB_LABELS,
+  DbSettingsError,
   redactConnectionString,
   schemaFileFor,
+  resolveDb,
   type DbProvider,
   type DbSettingsInput,
   type ResolvedDb,
-  resolveDb,
 } from "./lib/dbsettings.js";
 
 const execAsync = promisify(exec);
@@ -157,7 +158,13 @@ export async function getActiveDbStatus(): Promise<ActiveDbStatus> {
 }
 
 export async function testDatabase(input: DbSettingsInput): Promise<ResolvedDb> {
-  const resolved = resolveDb(input);
+  let resolved: ResolvedDb;
+  try {
+    resolved = resolveDb(input);
+  } catch (err) {
+    if (err instanceof DbSettingsError) throw new ApiError(400, err.message);
+    throw err;
+  }
   if (!resolved.connectionString) throw new ApiError(400, "A connection string is required.");
 
   const probe = createClient(resolved.provider, resolved.connectionString);
@@ -200,7 +207,13 @@ export async function switchDatabase(
   if (env.NODE_ENV === "test") {
     throw new ApiError(400, "Switching databases is disabled in test mode.");
   }
-  const resolved = resolveDb(input);
+  let resolved: ResolvedDb;
+  try {
+    resolved = resolveDb(input);
+  } catch (err) {
+    if (err instanceof DbSettingsError) throw new ApiError(400, err.message);
+    throw err;
+  }
   if (!resolved.connectionString) throw new ApiError(400, "A connection string is required.");
 
   const probe = createClient(resolved.provider, resolved.connectionString);

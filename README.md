@@ -40,15 +40,23 @@ Containers:
 - API: http://localhost:5000/api/health
 - Database: localhost:5432
 
-The API seeds demo data on first boot (see `seed.sh` internally; run explicitly with `npm run seed` inside the `api` service).
+The API seeds demo data on first boot (run explicitly with `npm run seed` inside the `api` service). The first admin is provisioned from `ADMIN_EMAIL` / `ADMIN_PASSWORD` on the first boot of the image — see [Accounts and roles](#accounts-and-roles).
 
 ### Demo accounts
+
+The dev stack ships with `ADMIN_EMAIL` / `ADMIN_PASSWORD` defaults in `docker-compose.yml`; override them in `.env`.
 
 | Role      | Email                   | Password     |
 | --------- | ----------------------- | ------------ |
 | Admin     | admin@portask.dev       | admin123     |
 | Employee  | employee@portask.dev    | employee123  |
 | Client    | client@portask.dev      | client123    |
+
+## Accounts and roles
+
+- **Public signup is client-only.** `POST /api/auth/register` ignores the concept of a role entirely: a `role` field in the body is rejected with `400`, and the account is always created as `CLIENT` with a company. There is no self-service path to agency staff.
+- **Staff accounts come from an admin.** `ADMIN` and `EMPLOYEE` users are created by an existing admin via `POST /api/users` (Team page), which is itself guarded by `requireRole("ADMIN")`.
+- **The first admin comes from the image.** On startup the API runs `bootstrapAdmin()` (`api/src/lib/bootstrapAdmin.ts`): if no `ADMIN` row exists yet, it creates one from `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME`. If no admin exists and those variables are unset, the API exits with an error instead of shipping a default account. The step is idempotent — it never re-provisions or resets credentials once an admin exists.
 
 ## Local development without Docker
 
@@ -66,6 +74,28 @@ npm install
 npm run dev        # http://localhost:5173  (proxies /api to :5000)
 ```
 
+The API bootstraps the first admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD` on an empty database, so set them in `api/.env` before `npm run dev`.
+
+## HTTPS and the session cookie
+
+The session lives in the `portask_token` cookie (`httpOnly`, `sameSite=lax`, 7 days). Browsers **discard `Secure` cookies received over plain HTTP**, so a cookie that is unconditionally `Secure` in production makes login return `200` while every later request arrives unauthenticated — the app looks broken with no error to explain it. The flag is therefore resolved per request:
+
+| `COOKIE_SECURE` | Resulting `Secure` flag                                                             |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| unset (default)  | `Secure` only when the request arrived over HTTPS                                     |
+| `true`           | always `Secure`                                                                       |
+| `false`          | never `Secure` (the cookie travels in clear text — plain-HTTP deployments only)      |
+
+`req.secure` only sees HTTPS if the API is told to trust the proxy in front of it, so `TRUST_PROXY` must equal the number of proxy hops: `1` for the bundled nginx, `2` when a TLS-terminating load balancer sits in front of it. The bundled nginx forwards the *browser-facing* protocol (it preserves an incoming `X-Forwarded-Proto` instead of overwriting it with its own `http`), which is what makes TLS termination work without touching the API.
+
+Pick one for a deployment:
+
+- **TLS terminated upstream (recommended)** — let a load balancer or reverse proxy serve HTTPS, forward to the bundled nginx over HTTP, keep `COOKIE_SECURE` unset and set `TRUST_PROXY` to your hop count. Also point `FRONTEND_URL` at the `https://` origin, since CORS uses it.
+- **Plain HTTP (the bundled prod compose, port 80 only)** — set `COOKIE_SECURE=false` to make login work, accepting that the session token is unencrypted on the wire. Fine for a LAN or behind a VPN, not for the public internet.
+- **TLS in the frontend container** — mount certificates into nginx and add an `ssl` server block; keep `TRUST_PROXY=1` and `COOKIE_SECURE` unset.
+
+Starting in `production` with `COOKIE_SECURE` unset logs a warning at boot, so an unconfigured deployment never fails silently again.
+
 ## Environment variables
 
 See `.env.example`. Required values:
@@ -75,6 +105,9 @@ See `.env.example`. Required values:
 - `PORT` — API port (default 5000)
 - `FRONTEND_URL` — allowed CORS origin
 - `NODE_ENV` — `development | production`
+- `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` — credentials for the first admin, created on the first boot of the image (no default; required on a fresh production database)
+- `TRUST_PROXY` — number of reverse-proxy hops in front of the API (default `0`; `1` for the bundled nginx). Required for `Secure` cookies and real client IPs behind TLS termination.
+- `COOKIE_SECURE` — force the `Secure` cookie flag on/off; leave unset to derive it from the request protocol. See [HTTPS and the session cookie](#https-and-the-session-cookie).
 
 Secrets are injected via Docker Compose or GitHub Actions secrets; the `.env` file is never committed.
 
@@ -97,7 +130,7 @@ Secrets are injected via Docker Compose or GitHub Actions secrets; the `.env` fi
 | Endpoint                                  | Methods            | Description                              |
 | ----------------------------------------- | ------------------ | ---------------------------------------- |
 | `/api/health`                             | GET                | Health check incl. DB connectivity       |
-| `/api/auth/register`                      | POST               | Create account (client/ad/employee)      |
+| `/api/auth/register`                      | POST               | Public client signup (client role only)    |
 | `/api/auth/login`, `/api/auth/logout`     | POST               | Cookie session                           |
 | `/api/auth/me`                            | GET                | Current user + role                      |
 | `/api/companies`                          | GET, POST          | Manage client companies (admin)          |
@@ -119,8 +152,30 @@ Secrets are injected via Docker Compose or GitHub Actions secrets; the `.env` fi
 | `/api/calendar`                           | GET                | Role-scoped task/milestone/project dates |
 | `/api/profile`                            | GET, PATCH         | View/update profile, change password      |
 | `/api/dashboard`                          | GET                | Role-aware dashboard metrics             |
+| `/api/reports`                            | GET, POST          | Create/manage public progress reports     |
+| `/api/reports/:id`                        | GET, PATCH         | Report detail, rename, revoke, set expiry |
+| `/api/reports/:id/curation`               | PUT                | Choose which updates/deliverables publish  |
+| `/api/reports/:id/comments`               | GET                | All public comments incl. pending/spam    |
+| `/api/reports/:id/comments/:commentId`    | PATCH, DELETE      | Approve / mark spam / delete a comment    |
+| `/public/report/:token`                   | GET                | Public report page — no authentication    |
+| `/public/report/:token/comments`          | POST               | Public comment (rate limited)             |
 
 Access rules: `ADMIN`/`EMPLOYEE` are agency staff with full access; `CLIENT` is restricted to projects of their own company. Every request is authorized server-side.
+
+## Public progress reports
+
+An employee can curate a progress report for a project and share it with anyone who has the link — no account required. Available under **Public reports** in the sidebar (`/reports`).
+
+The public URL is `/r/<token>`, where the token is 24 bytes of `crypto.randomBytes` and is the only thing granting access.
+
+- **Curation, not mirroring.** The employee ticks specific client-visible updates and deliverables. Internal updates (`visibility=INTERNAL`) are rejected by the curation endpoint and filtered again when rendering, so they cannot leak even through a stale join row.
+- **Revocation.** `enabled: false` immediately makes the link return 404. Optional `expiresAt` cuts it off automatically.
+- **Comments are moderated.** Public comments land as `PENDING` and are invisible until an employee approves them from the report editor. Visitors are rate limited to 5 comments per report per hour, plus a 5-per-10-minutes IP limit; the IP is stored only as a truncated SHA-256 hash.
+- **Public payloads are trimmed.** The response omits internal ids, commenter IP hashes, moderation status, and author emails, and sends `X-Robots-Tag: noindex` so the link is not crawled.
+
+Revoked, expired, unknown and malformed tokens all return an identical 404 so the endpoint never confirms that a token exists.
+
+Requires `express-rate-limit`, already added as a dependency. Nginx and the Vite dev server both proxy `/public/` to the API.
 
 ## CI/CD
 
@@ -128,6 +183,8 @@ Access rules: `ADMIN`/`EMPLOYEE` are agency staff with full access; `CLIENT` is 
 
 - **CI (PRs):** install, lint/typecheck, unit + API tests against a Postgres service, production builds.
 - **CD (`main`):** build & push `api`/`frontend` images to GHCR (tagged with `git.sha`), deploy to the target host, smoke-check `/api/health`.
+
+Deploy requires the repository secrets `JWT_SECRET`, `POSTGRES_PASSWORD`, `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
 
 ## Testing
 

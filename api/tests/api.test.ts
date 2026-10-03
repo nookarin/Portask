@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import bcrypt from "bcryptjs";
 import request from "supertest";
 import { app } from "../src/app.js";
 import { prisma } from "../src/db.js";
@@ -27,32 +28,44 @@ async function register(agent: request.Agent, body: Record<string, unknown>) {
   return res.body.user;
 }
 
+async function login(agent: request.Agent, userEmail: string) {
+  const res = await agent
+    .post("/api/auth/login")
+    .send({ email: userEmail, password: "password123" })
+    .expect(200);
+  return res.body.user;
+}
+
 beforeAll(async () => {
   // Clean up leftover rows from any previous failed run with the same stamp patterns.
   await prisma.user.deleteMany({
     where: { email: { contains: `-${stamp}` } },
   });
 
-  const admin = await register(adminAgent, {
-    name: "Test Admin",
-    email: email("admin"),
-    password: "password123",
-    role: "ADMIN",
+  // The first admin comes from the image bootstrap (ADMIN_EMAIL/ADMIN_PASSWORD),
+  // never from public signup.
+  await prisma.user.create({
+    data: {
+      name: "Test Admin",
+      email: email("admin"),
+      passwordHash: await bcrypt.hash("password123", 10),
+      role: "ADMIN",
+    },
   });
+  const admin = await login(adminAgent, email("admin"));
   expect(admin.role).toBe("ADMIN");
 
-  await register(employeeAgent, {
-    name: "Test Employee",
-    email: email("emp"),
-    password: "password123",
-    role: "EMPLOYEE",
-  });
+  // Employees are created by an existing admin through POST /api/users.
+  await adminAgent
+    .post("/api/users")
+    .send({ name: "Test Employee", email: email("emp"), password: "password123", role: "EMPLOYEE" })
+    .expect(201);
+  await login(employeeAgent, email("emp"));
 
   const clientA = await register(clientAAgent, {
     name: "Client A",
     email: email("clienta"),
     password: "password123",
-    role: "CLIENT",
     companyName: uniq("Acme"),
   });
   expect(clientA.company).toBeTruthy();
@@ -62,7 +75,6 @@ beforeAll(async () => {
     name: "Client B",
     email: email("clientb"),
     password: "password123",
-    role: "CLIENT",
     companyName: uniq("Globex"),
   });
   expect(clientB.company).toBeTruthy();
@@ -103,6 +115,69 @@ describe("authentication", () => {
   it("logs out and clears the session", async () => {
     const res = await request(app).post("/api/auth/logout").expect(200);
     expect(res.body.ok).toBe(true);
+  });
+});
+
+describe("public registration", () => {
+  it("rejects a role supplied in the request body", async () => {
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send({
+        name: "Escalator",
+        email: email("esc"),
+        password: "password123",
+        companyName: uniq("Evilcorp"),
+        role: "ADMIN",
+      })
+      .expect(400);
+    expect(res.body.error).toBe("Invalid input.");
+    expect(await prisma.user.findUnique({ where: { email: email("esc") } })).toBeNull();
+  });
+
+  it("rejects a role of EMPLOYEE supplied in the request body", async () => {
+    await request(app)
+      .post("/api/auth/register")
+      .send({
+        name: "Escalator",
+        email: email("esc2"),
+        password: "password123",
+        companyName: uniq("Evilcorp2"),
+        role: "EMPLOYEE",
+      })
+      .expect(400);
+    expect(await prisma.user.findUnique({ where: { email: email("esc2") } })).toBeNull();
+  });
+
+  it("creates a client account", async () => {
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send({ name: "Client C", email: email("clientc"), password: "password123", companyName: uniq("Initech") })
+      .expect(201);
+    expect(res.body.user.role).toBe("CLIENT");
+  });
+
+  it("requires a company", async () => {
+    await request(app)
+      .post("/api/auth/register")
+      .send({ name: "No Company", email: email("nocompany"), password: "password123" })
+      .expect(400);
+  });
+
+  it("does not let a self-registered client reach admin-only routes", async () => {
+    const agent = request.agent(app);
+    await agent
+      .post("/api/auth/register")
+      .send({ name: "Sneaky", email: email("sneaky"), password: "password123", companyName: uniq("SneakyCo") })
+      .expect(201);
+    await agent.get("/api/users").expect(403);
+  });
+
+  it("lets an admin create staff through /api/users", async () => {
+    const res = await adminAgent
+      .post("/api/users")
+      .send({ name: "Second Employee", email: email("emp2"), password: "password123", role: "EMPLOYEE" })
+      .expect(201);
+    expect(res.body.user.role).toBe("EMPLOYEE");
   });
 });
 
