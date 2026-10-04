@@ -12,6 +12,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate && prisma generate --schema prisma/schema.mysql.prisma && prisma generate --schema prisma/schema.sqlite.prisma && prisma generate --schema prisma/schema.mongodb.prisma",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:status": "prisma migrate status",
     "prisma:push": "prisma db push",
     "seed": "tsx prisma/seed.ts"
   },

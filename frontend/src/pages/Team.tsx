@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { companiesApi, usersApi } from "../api";
+import { useAuth } from "../auth/AuthContext";
 import { Alert, Badge, Button, Card, EmptyState, formClass, Label, Modal, Spinner } from "../components/ui";
 import type { Company, Role } from "../types";
 
@@ -13,13 +14,16 @@ interface ManagedUser {
   company?: { id: string; name: string } | null;
 }
 
-const roleTone: Record<Role, "blue" | "green" | "purple"> = {
+const roleTone: Record<Role, "blue" | "green" | "purple" | "amber"> = {
   ADMIN: "purple",
+  MANAGER: "purple",
   EMPLOYEE: "blue",
+  FREELANCER: "blue",
   CLIENT: "green",
 };
 
 export default function Team() {
+  const { user } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,6 +108,7 @@ export default function Team() {
         open={showCreate}
         onClose={() => setShowCreate(false)}
         companies={companies}
+        isAdmin={user?.role === "ADMIN"}
         onCreated={() => {
           setShowCreate(false);
           void load();
@@ -117,11 +122,13 @@ function InviteUserModal({
   open,
   onClose,
   companies,
+  isAdmin,
   onCreated,
 }: {
   open: boolean;
   onClose: () => void;
   companies: Company[];
+  isAdmin: boolean;
   onCreated: () => void;
 }) {
   const [name, setName] = useState("");
@@ -179,8 +186,12 @@ function InviteUserModal({
           <Label>Role</Label>
           <select className={formClass} value={role} onChange={(e) => setRole(e.target.value as Role)}>
             <option value="EMPLOYEE">Employee</option>
+            <option value="FREELANCER">Freelancer</option>
+            <option value="MANAGER">Manager</option>
             <option value="CLIENT">Client</option>
-            <option value="ADMIN">Admin</option>
+            {/* Managers manage the team but cannot mint another admin, so the API
+                rejects it for them. The option is hidden to keep the form honest. */}
+            {isAdmin ? <option value="ADMIN">Admin</option> : null}
           </select>
         </div>
         {role === "CLIENT" ? (

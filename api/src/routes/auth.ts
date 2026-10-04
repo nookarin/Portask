@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "../db.js";
 import { ApiError, wrap } from "../lib/errors.js";
 import { COOKIE_NAME, cookieOptions, signToken } from "../lib/jwt.js";
+import { loginAccountLimiter, loginIpLimiter, registerLimiter } from "../lib/rateLimit.js";
 import { requireAuth } from "../middleware/auth.js";
 import type { User } from "@prisma/client";
 import type { RequestHandler } from "express";
@@ -16,6 +17,8 @@ export function sanitizeUser(user: User & { company?: { id: string; name: string
     email: user.email,
     name: user.name,
     avatarUrl: user.avatarUrl ?? null,
+    bio: user.bio ?? null,
+    availableForWork: user.availableForWork,
     role: user.role,
     companyId: user.companyId,
     company: user.company ?? null,
@@ -97,8 +100,8 @@ const me: RequestHandler = (req, res) => {
   res.json({ user: sanitizeUser(req.user! as User & { company?: { id: string; name: string } | null }) });
 };
 
-router.post("/register", register);
-router.post("/login", login);
+router.post("/register", registerLimiter, register);
+router.post("/login", loginIpLimiter, loginAccountLimiter, login);
 router.post("/logout", logout);
 router.get("/me", requireAuth, me);
 

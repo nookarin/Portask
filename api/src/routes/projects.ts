@@ -5,7 +5,7 @@ import { ApiError, wrap } from "../lib/errors.js";
 import {
   requireAuth,
   requireInternal,
-  requireRole,
+  requireManagement,
   requireProjectAccess,
 } from "../middleware/auth.js";
 import { logActivity } from "../helpers/activity.js";
@@ -150,7 +150,7 @@ router.put(
 
 router.delete(
   "/:id",
-  requireRole("ADMIN"),
+  requireManagement,
   wrap(async (req, res) => {
     await prisma.project.delete({ where: { id: req.params.id } });
     res.json({ ok: true });

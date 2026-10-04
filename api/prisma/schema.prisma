@@ -7,10 +7,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Order matters and must not be tidied up: PostgreSQL enums are append-only, so the
+// declaration order is the order the values were added to the database. Inserting a
+// value in the middle makes Prisma plan a full type rewrite (rename, recreate, migrate
+// every row) instead of a cheap `ALTER TYPE ... ADD VALUE`. Append new roles here.
 enum Role {
   ADMIN
   EMPLOYEE
   CLIENT
+  MANAGER
+  FREELANCER
 }
 
 enum ProjectStatus {
@@ -57,6 +63,11 @@ model User {
   passwordHash      String
   name              String
   avatarUrl         String?
+  // Freelancer self-service: a short pitch shown on the internal talent list, and the
+  // flag a manager filters on when staffing a project. Both are ignored by every other
+  // role, so they stay harmless on staff and client accounts.
+  bio               String?
+  availableForWork  Boolean           @default(false)
   role              Role              @default(EMPLOYEE)
   companyId         String?
   company           Company?          @relation("CompanyUsers", fields: [companyId], references: [id])

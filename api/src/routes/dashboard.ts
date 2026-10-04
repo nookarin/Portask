@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "../db.js";
 import { wrap } from "../lib/errors.js";
 import { requireAuth } from "../middleware/auth.js";
+import { isInternal, isManagement } from "../lib/roles.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -49,7 +50,7 @@ router.get(
       ]);
 
     const myTasks =
-      user.role === "EMPLOYEE" || user.role === "ADMIN"
+      isInternal(user.role)
         ? await prisma.task.findMany({
             where: { assigneeId: user.id },
             orderBy: { updatedAt: "desc" },
@@ -65,7 +66,7 @@ router.get(
     const blockedMyTasks = myTasks.filter((t) => t.status === "BLOCKED");
 
     const upcomingMilestones =
-      user.role === "CLIENT" || user.role === "ADMIN"
+      user.role === "CLIENT" || isManagement(user.role)
         ? await prisma.milestone.findMany({
             where: { ...(isClient ? { project: projectWhere } : {}), dueDate: { gte: now } },
             orderBy: { dueDate: "asc" },

@@ -8,6 +8,7 @@ import {
   tasksApi,
   updatesApi,
   uploadFile,
+  UPLOAD_ACCEPT,
 } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -431,7 +432,12 @@ function UpdatesTab({ project, isInternal, onChanged }: { project: Project; isIn
             </div>
             <div>
               <Label>Attachment (optional)</Label>
-              <input type="file" className={formClass} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <input
+                type="file"
+                accept={UPLOAD_ACCEPT}
+                className={formClass}
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
             </div>
             <Button type="submit" disabled={busy}>Post update</Button>
           </form>
@@ -735,7 +741,12 @@ function AddDeliverableModal({
         </div>
         <div>
           <Label>File (optional)</Label>
-          <input type="file" className={formClass} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <input
+            type="file"
+            accept={UPLOAD_ACCEPT}
+            className={formClass}
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
         </div>
         <div>
           <Label>Delivery link (optional)</Label>

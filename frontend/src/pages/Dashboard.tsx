@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { dashboardApi } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { Badge, Card, EmptyState, ProgressBar, Spinner, StatCard, formatDateTime } from "../components/ui";
+import { isInternalRole, isManagementRole } from "../types";
 import type { DashboardData, Task } from "../types";
 
 const taskTone = (s: Task["status"]) =>
@@ -34,7 +35,11 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-          {role === "ADMIN" ? "Workspace dashboard" : role === "EMPLOYEE" ? "My dashboard" : "Project dashboard"}
+          {isManagementRole(role)
+            ? "Workspace dashboard"
+            : isInternalRole(role)
+              ? "My dashboard"
+              : "Project dashboard"}
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">Everything that needs your attention, at a glance.</p>
       </div>
@@ -50,7 +55,10 @@ export default function Dashboard() {
         />
       </div>
 
-      {role === "EMPLOYEE" ? (
+      {/* Every internal role gets a personal task list, which is what the API returns
+          for `myTasks`. It used to render for employees only, so admins fetched the
+          data and threw it away. */}
+      {isInternalRole(role) ? (
         <section>
           <h2 className="mb-3 text-lg font-semibold text-slate-800 dark:text-slate-100">My tasks</h2>
           {data.myTasks.length === 0 ? (

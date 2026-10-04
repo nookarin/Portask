@@ -76,7 +76,10 @@ export function resolveDefaultDb(): ActiveDb {
 }
 
 function loadActive(): ActiveDb {
-  if (env.NODE_ENV === "test") return resolveDefaultDb();
+  // The stored config is a development-only convenience. Outside development the app
+  // must always use DATABASE_URL, so a config left behind in the persisted data volume
+  // cannot silently repoint a deployed instance at some other database.
+  if (env.NODE_ENV !== "development") return resolveDefaultDb();
   return readStoredConfig() ?? resolveDefaultDb();
 }
 
@@ -176,6 +179,17 @@ export async function testDatabase(input: DbSettingsInput): Promise<ResolvedDb> 
   return resolved;
 }
 
+// Repointing the app at another database runs `prisma db push` against whatever
+// connection string it is handed, which can drop columns and rewrite rows. That is
+// acceptable against a developer's scratch database and unacceptable on a deployed
+// one, so it is confined to NODE_ENV=development — tests included, so a suite can
+// never repoint the database it is asserting against.
+function assertDbSwitchAllowed(): void {
+  if (env.NODE_ENV !== "development") {
+    throw new ApiError(400, "Switching databases is only available in development.");
+  }
+}
+
 export async function pushSchema(provider: DbProvider, connectionString: string, force = false): Promise<void> {
   const schema = schemaFileFor(provider);
   const prismaBin = path.join(
@@ -204,9 +218,7 @@ export async function switchDatabase(
   input: DbSettingsInput,
   opts: { force?: boolean } = {}
 ): Promise<ActiveDbStatus> {
-  if (env.NODE_ENV === "test") {
-    throw new ApiError(400, "Switching databases is disabled in test mode.");
-  }
+  assertDbSwitchAllowed();
   let resolved: ResolvedDb;
   try {
     resolved = resolveDb(input);
@@ -243,9 +255,7 @@ export async function switchDatabase(
 }
 
 export async function resetToDefault(): Promise<ActiveDbStatus> {
-  if (env.NODE_ENV === "test") {
-    throw new ApiError(400, "Switching databases is disabled in test mode.");
-  }
+  assertDbSwitchAllowed();
   clearStoredConfig();
   const defaultValue = resolveDefaultDb();
   const next = createClient(defaultValue.provider, defaultValue.connectionString);

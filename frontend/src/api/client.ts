@@ -10,6 +10,13 @@ export class ApiError extends Error {
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
+// Mirrors the server's allowlist in api/src/routes/upload.ts. The server is what
+// enforces it — these only keep the file picker from offering choices that would be
+// rejected. `image/*` is deliberately not used: it includes SVG, which the server
+// refuses because a browser executes script inside it.
+export const UPLOAD_ACCEPT = ".png,.jpg,.jpeg,.gif,.webp,.avif,.pdf";
+export const AVATAR_ACCEPT = ".png,.jpg,.jpeg,.gif,.webp,.avif";
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...options,

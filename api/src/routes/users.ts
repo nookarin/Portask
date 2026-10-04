@@ -1,18 +1,23 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import { Role } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db.js";
 import { ApiError, wrap } from "../lib/errors.js";
-import { requireAuth, requireRole } from "../middleware/auth.js";
+import { requireAuth, requireManagement } from "../middleware/auth.js";
 
 const router = Router();
-router.use(requireAuth, requireRole("ADMIN"));
+// Managers run the team as well as the owner. They still cannot mint an admin:
+// see the escalation guard below.
+router.use(requireAuth, requireManagement);
 
+// Derived from the generated Prisma enum so a new role cannot be added to the schema
+// and forgotten here, which would reject it at the API instead of creating it.
 const createSchema = z.object({
   name: z.string().min(1).max(200),
   email: z.string().email(),
   password: z.string().min(8),
-  role: z.enum(["ADMIN", "EMPLOYEE", "CLIENT"]).default("EMPLOYEE"),
+  role: z.nativeEnum(Role).default("EMPLOYEE"),
   companyId: z.string().optional(),
 });
 
@@ -33,6 +38,12 @@ router.post(
     const input = createSchema.parse(req.body);
     if (input.role === "CLIENT" && !input.companyId) {
       throw new ApiError(400, "Client accounts must belong to a company.");
+    }
+    // A manager manages the team; promoting someone to the owner role is the one
+    // power the agency owner keeps, otherwise "manage users" is an escalation to
+    // admin by another name.
+    if (req.user!.role === "MANAGER" && input.role === "ADMIN") {
+      throw new ApiError(403, "Only an admin can create another admin.");
     }
     const existing = await prisma.user.findUnique({ where: { email: input.email } });
     if (existing) throw new ApiError(409, "An account with this email already exists.");

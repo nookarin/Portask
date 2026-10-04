@@ -1,6 +1,7 @@
 import { prisma } from "../db.js";
 import { ApiError, wrap } from "../lib/errors.js";
 import { COOKIE_NAME, verifyToken } from "../lib/jwt.js";
+import { INTERNAL_ROLES, MANAGEMENT_ROLES, isInternal } from "../lib/roles.js";
 import type { RequestHandler, Request } from "express";
 import type { Role } from "@prisma/client";
 
@@ -30,10 +31,17 @@ export const requireRole =
   };
 
 export const requireInternal: RequestHandler =
-  requireRole("ADMIN", "EMPLOYEE");
+  requireRole(...INTERNAL_ROLES);
+
+/**
+ * Internal, plus the agency-management powers: client companies, the team, and
+ * project deletion. `/api/settings` stays ADMIN-only.
+ */
+export const requireManagement: RequestHandler =
+  requireRole(...MANAGEMENT_ROLES);
 
 export async function canAccessProject(user: NonNullable<Request["user"]>, projectId: string): Promise<boolean> {
-  if (user.role === "ADMIN" || user.role === "EMPLOYEE") return true;
+  if (isInternal(user.role)) return true;
   if (user.role === "CLIENT") {
     const project = await prisma.project.findUnique({
       where: { id: projectId },

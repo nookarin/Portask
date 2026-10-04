@@ -12,6 +12,8 @@ enum Role {
   ADMIN
   EMPLOYEE
   CLIENT
+  MANAGER
+  FREELANCER
 }
 
 enum ProjectStatus {
@@ -109,6 +111,8 @@ model User {
   passwordHash      String
   name              String
   avatarUrl         String?
+  bio               String?
+  availableForWork  Boolean           @default(false)
   role              Role              @default(EMPLOYEE)
   companyId         String?
   company           Company?          @relation("CompanyUsers", fields: [companyId], references: [id])

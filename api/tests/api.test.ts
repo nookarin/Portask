@@ -382,3 +382,43 @@ describe("validation", () => {
     expect(res.body.error).toBe("Invalid input.");
   });
 });
+
+// Kept last on purpose: these tests deliberately exhaust a per-IP/per-account budget, so
+// anything added below them would start out throttled.
+describe("rate limiting", () => {
+  it("throttles repeated failed logins for a single account", async () => {
+    const target = email("throttle");
+    for (let i = 0; i < 5; i += 1) {
+      await request(app).post("/api/auth/login").send({ email: target, password: "wrong-password" }).expect(401);
+    }
+
+    const blocked = await request(app)
+      .post("/api/auth/login")
+      .send({ email: target, password: "wrong-password" })
+      .expect(429);
+    expect(blocked.body.error).toContain("Too many failed sign-in attempts");
+    expect(blocked.headers["ratelimit-limit"]).toBeDefined();
+    expect(blocked.headers["retry-after"]).toBeDefined();
+  });
+
+  it("throttles mass signups from one connection", async () => {
+    let blocked: request.Response | null = null;
+
+    for (let i = 0; i < 15 && !blocked; i += 1) {
+      const res = await request(app)
+        .post("/api/auth/register")
+        .send({
+          name: `Signup ${i}`,
+          email: email(`signup${i}`),
+          password: "password123",
+          companyName: uniq(`SignupCo${i}`),
+        });
+      if (res.status === 429) blocked = res;
+      else expect(res.status).toBe(201);
+    }
+
+    expect(blocked).not.toBeNull();
+    expect(blocked!.body.error).toContain("Too many accounts created");
+    expect(blocked!.headers["retry-after"]).toBeDefined();
+  });
+});

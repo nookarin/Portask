@@ -1,4 +1,21 @@
-export type Role = "ADMIN" | "EMPLOYEE" | "CLIENT";
+export type Role = "ADMIN" | "MANAGER" | "EMPLOYEE" | "FREELANCER" | "CLIENT";
+
+/**
+ * Role groups mirroring `api/src/lib/roles.ts`, which is the authority. Keeping them in
+ * one place here means a route guard, a nav item, and a dashboard variant cannot drift
+ * apart by someone checking only one of them.
+ */
+export const INTERNAL_ROLES: Role[] = ["ADMIN", "MANAGER", "EMPLOYEE", "FREELANCER"];
+export const MANAGEMENT_ROLES: Role[] = ["ADMIN", "MANAGER"];
+
+export function isInternalRole(role: Role | undefined): boolean {
+  return role !== undefined && INTERNAL_ROLES.includes(role);
+}
+
+export function isManagementRole(role: Role | undefined): boolean {
+  return role !== undefined && MANAGEMENT_ROLES.includes(role);
+}
+
 export type ProjectStatus = "PLANNING" | "ACTIVE" | "ON_HOLD" | "COMPLETED";
 export type TaskStatus = "TO_DO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
 export type Priority = "LOW" | "MEDIUM" | "HIGH";
@@ -21,6 +38,8 @@ export interface User {
   email: string;
   name: string;
   avatarUrl?: string | null;
+  bio?: string | null;
+  availableForWork?: boolean;
   role: Role;
   companyId?: string | null;
   company?: { id: string; name: string } | null;

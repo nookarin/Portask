@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { profileApi, uploadFile } from "../api";
+import { AVATAR_ACCEPT, profileApi, uploadFile } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { Alert, Badge, Button, Card, formClass, Label, Spinner } from "../components/ui";
 
@@ -23,6 +23,11 @@ export default function Profile() {
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+
+  // Freelancer-only staffing fields. Seeded from the session user so the form is
+  // right on first paint; `saveProfile` writes the server's value back afterwards.
+  const [bio, setBio] = useState(user?.bio ?? "");
+  const [available, setAvailable] = useState(user?.availableForWork ?? false);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -51,13 +56,20 @@ export default function Profile() {
     }
   }
 
-  async function saveProfile(patch: { name?: string; avatarUrl?: string | null }) {
+  async function saveProfile(patch: {
+    name?: string;
+    avatarUrl?: string | null;
+    bio?: string | null;
+    availableForWork?: boolean;
+  }) {
     setBusy(true);
     setError("");
     try {
       const { user: updated } = await profileApi.update(patch);
       setName(updated.name);
       setAvatarUrl(updated.avatarUrl ?? null);
+      setBio(updated.bio ?? "");
+      setAvailable(updated.availableForWork ?? false);
       await refresh();
       setSaved(true);
     } catch (err) {
@@ -88,7 +100,12 @@ export default function Profile() {
     }
   }
 
-  const roleTone = user.role === "ADMIN" ? "purple" : user.role === "EMPLOYEE" ? "blue" : "green";
+  const roleTone =
+    user.role === "ADMIN" || user.role === "MANAGER"
+      ? "purple"
+      : user.role === "EMPLOYEE" || user.role === "FREELANCER"
+        ? "blue"
+        : "green";
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
@@ -125,7 +142,13 @@ export default function Profile() {
               <Badge tone={roleTone}>{user.role}</Badge>
             </div>
             <div className="flex items-center gap-2">
-              <input ref={fileInput} type="file" accept="image/*" className="hidden" onChange={(ev) => void pickAvatar(ev)} />
+              <input
+                ref={fileInput}
+                type="file"
+                accept={AVATAR_ACCEPT}
+                className="hidden"
+                onChange={(ev) => void pickAvatar(ev)}
+              />
               <Button variant="secondary" onClick={() => fileInput.current?.click()} disabled={uploading || busy}>
                 {uploading ? "Uploading…" : "Upload picture"}
               </Button>
@@ -156,6 +179,51 @@ export default function Profile() {
           </div>
         </form>
       </Card>
+
+      {user.role === "FREELANCER" ? (
+        <Card>
+          <h2 className="mb-1 text-lg font-semibold text-slate-800 dark:text-slate-100">Availability</h2>
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+            Managers see freelancers who are available when they staff a project.
+          </p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void saveProfile({ bio: bio.trim() === "" ? null : bio.trim(), availableForWork: available });
+            }}
+            className="space-y-4"
+          >
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={available}
+                onChange={(e) => setAvailable(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              Available for work
+            </label>
+            <div>
+              <Label>Short bio</Label>
+              <textarea
+                className={formClass}
+                rows={3}
+                maxLength={500}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="What you do and what you're looking for."
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={busy || (bio === (user.bio ?? "") && available === (user.availableForWork ?? false))}
+              >
+                Save availability
+              </Button>
+            </div>
+          </form>
+        </Card>
+      ) : null}
 
       <Card>
         <h2 className="mb-4 text-lg font-semibold text-slate-800 dark:text-slate-100">Change password</h2>

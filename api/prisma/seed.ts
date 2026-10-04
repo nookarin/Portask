@@ -23,6 +23,32 @@ async function main() {
     },
   });
 
+  const manager = await prisma.user.upsert({
+    where: { email: "manager@portask.dev" },
+    update: {},
+    create: {
+      email: "manager@portask.dev",
+      passwordHash: await bcrypt.hash("manager123", 10),
+      name: "Mo Manager",
+      role: Role.MANAGER,
+    },
+  });
+
+  // Seeded as available so the talent list has something in it; a real freelancer
+  // toggles this from their own profile.
+  const freelancer = await prisma.user.upsert({
+    where: { email: "freelancer@portask.dev" },
+    update: {},
+    create: {
+      email: "freelancer@portask.dev",
+      passwordHash: await bcrypt.hash("freelancer123", 10),
+      name: "Freya Freelance",
+      role: Role.FREELANCER,
+      bio: "Brand and editorial design. Available for short design sprints.",
+      availableForWork: true,
+    },
+  });
+
   const company = await prisma.company.upsert({
     where: { name: "Acme Corp" },
     update: {},
@@ -142,7 +168,9 @@ async function main() {
 
   console.log("Seeded demo data.");
   console.log(`  Admin:     ${admin?.email ?? "(none yet — set ADMIN_EMAIL/ADMIN_PASSWORD)"}`);
+  console.log(`  Manager:   ${manager.email}`);
   console.log(`  Employee:  ${employee.email}`);
+  console.log(`  Freelancer:${freelancer.email}`);
   console.log(`  Client:    ${client.email} (${company.name})`);
 }
 

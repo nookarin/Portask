@@ -13,9 +13,11 @@ import Profile from "./pages/Profile";
 import Calendar from "./pages/Calendar";
 import Companies from "./pages/Companies";
 import Team from "./pages/Team";
+import Talent from "./pages/Talent";
 import Settings from "./pages/Settings";
 import PublicReport from "./pages/PublicReport";
 import Reports from "./pages/Reports";
+import { isManagementRole } from "./types";
 import type { ReactNode } from "react";
 
 function Protected({ children }: { children: ReactNode }) {
@@ -27,6 +29,16 @@ function Protected({ children }: { children: ReactNode }) {
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+  return <>{children}</>;
+}
+
+/**
+ * Agency management: team, clients, project deletion. `Settings` nests its own
+ * stricter ADMIN-only check, so managers reach the app but not the settings screen.
+ */
+function ManagementOnly({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  if (!isManagementRole(user?.role)) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -78,27 +90,37 @@ export default function App() {
               <Route
                 path="/companies"
                 element={
-                  <AdminOnly>
+                  <ManagementOnly>
                     <Companies />
-                  </AdminOnly>
+                  </ManagementOnly>
                 }
               />
               <Route
                 path="/team"
                 element={
-                  <AdminOnly>
+                  <ManagementOnly>
                     <Team />
-                  </AdminOnly>
+                  </ManagementOnly>
                 }
               />
               <Route
-                path="/settings"
+                path="/talent"
                 element={
-                  <AdminOnly>
-                    <Settings />
-                  </AdminOnly>
+                  <ManagementOnly>
+                    <Talent />
+                  </ManagementOnly>
                 }
               />
+              {import.meta.env.DEV ? (
+                <Route
+                  path="/settings"
+                  element={
+                    <AdminOnly>
+                      <Settings />
+                    </AdminOnly>
+                  }
+                />
+              ) : null}
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

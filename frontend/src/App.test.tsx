@@ -62,6 +62,95 @@ describe("App routing", () => {
     expect(await screen.findByText("Workspace dashboard")).toBeInTheDocument();
     expect(screen.getByText("Companies")).toBeInTheDocument();
     expect(screen.getByText("Team")).toBeInTheDocument();
+    expect(screen.getByText("Talent")).toBeInTheDocument();
+  });
+
+  it("gives a manager the team, client, and talent tools but not the database one", async () => {
+    vi.spyOn(authApi, "me").mockResolvedValueOnce({
+      user: { id: "u3", email: "manager@portask.dev", name: "Mo Manager", role: "MANAGER" },
+    });
+    renderAt("/");
+    expect(await screen.findByText("Workspace dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Team")).toBeInTheDocument();
+    expect(screen.getByText("Companies")).toBeInTheDocument();
+    expect(screen.getByText("Talent")).toBeInTheDocument();
+    // /api/settings is ADMIN-only, so managers must not be offered a dead link.
+    expect(screen.queryByText("Database")).not.toBeInTheDocument();
+  });
+
+  it("lets a manager open the talent list", async () => {
+    vi.spyOn(authApi, "me").mockResolvedValueOnce({
+      user: { id: "u3", email: "manager@portask.dev", name: "Mo Manager", role: "MANAGER" },
+    });
+    global.fetch = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/dashboard")) {
+        return Promise.resolve(
+          okResponse({
+            counts: { activeProjects: 0, riskProjects: 0, blockedTasks: 0, pendingDeliverables: 0 },
+            recentUpdates: [],
+            recentActivity: [],
+            myTasks: [],
+            tasksDueSoon: [],
+            blockedMyTasks: [],
+            upcomingMilestones: [],
+          })
+        );
+      }
+      if (url.includes("/api/talent")) {
+        return Promise.resolve(okResponse({ talent: [] }));
+      }
+      if (url.includes("/api/projects")) return Promise.resolve(okResponse([]));
+      return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+    });
+    renderAt("/talent");
+    expect(
+      await screen.findByText(/freelancers who have marked themselves as available/i)
+    ).toBeInTheDocument();
+  });
+
+  it("treats a freelancer as internal but not as management", async () => {
+    vi.spyOn(authApi, "me").mockResolvedValueOnce({
+      user: {
+        id: "u4",
+        email: "freelancer@portask.dev",
+        name: "Freya Freelance",
+        role: "FREELANCER",
+        availableForWork: true,
+      },
+    });
+    global.fetch = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/dashboard")) {
+        return Promise.resolve(
+          okResponse({
+            counts: { activeProjects: 0, riskProjects: 0, blockedTasks: 0, pendingDeliverables: 0 },
+            recentUpdates: [],
+            recentActivity: [],
+            myTasks: [],
+            tasksDueSoon: [],
+            blockedMyTasks: [],
+            upcomingMilestones: [],
+          })
+        );
+      }
+      return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+    });
+    renderAt("/");
+    expect(await screen.findByText("My dashboard")).toBeInTheDocument();
+    // Internal-only nav item is present; the management section is not.
+    expect(screen.getByText("Public reports")).toBeInTheDocument();
+    expect(screen.queryByText("Team")).not.toBeInTheDocument();
+    expect(screen.queryByText("Talent")).not.toBeInTheDocument();
+  });
+
+  it("keeps a freelancer off the team page", async () => {
+    vi.spyOn(authApi, "me").mockResolvedValueOnce({
+      user: { id: "u4", email: "freelancer@portask.dev", name: "Freya Freelance", role: "FREELANCER" },
+    });
+    renderAt("/team");
+    // Redirected to the dashboard, which is the freelancer view.
+    expect(await screen.findByText("My dashboard")).toBeInTheDocument();
   });
 
   it("allows admin to navigate to the Team page", async () => {

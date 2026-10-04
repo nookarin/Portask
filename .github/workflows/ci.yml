@@ -49,6 +49,21 @@ jobs:
       - name: Generate Prisma client
         run: npm run prisma:generate
 
+      # Deploy runs `prisma migrate deploy`, so the checked-in migrations are the
+      # source of truth. Apply them to a scratch database and diff the result
+      # against schema.prisma: this fails if a migration is broken *or* if someone
+      # edited the schema without generating a migration for it.
+      - name: Verify migrations apply and match schema.prisma
+        env:
+          MIGRATE_CHECK_URL: postgresql://postgres:postgres@localhost:5432/portask_migrate_check
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -q -c "CREATE DATABASE portask_migrate_check"
+          DATABASE_URL=$MIGRATE_CHECK_URL npx prisma migrate deploy
+          npx prisma migrate diff \
+            --from-url "$MIGRATE_CHECK_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code
+
       - name: Run integration tests
         run: npm test
 
@@ -141,7 +156,7 @@ jobs:
             export ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
             export ADMIN_NAME=${{ vars.ADMIN_NAME }}
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml run --rm api npx prisma db push --skip-generate
+            docker compose -f docker-compose.prod.yml run --rm api npx prisma migrate deploy
             docker compose -f docker-compose.prod.yml up -d
             sleep 10
             curl -fsS http://localhost/api/health

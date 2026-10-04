@@ -1,4 +1,4 @@
-import { get, post, put, del, patch, uploadFile } from "./client";
+import { get, post, put, del, patch, uploadFile, UPLOAD_ACCEPT, AVATAR_ACCEPT } from "./client";
 import type {
   ActivityLog,
   CalendarEvent,
@@ -18,6 +18,7 @@ import type {
   PublicCommentStatus,
   PublicReportData,
   ReportDetail,
+  Role,
   Task,
   User,
 } from "../types";
@@ -46,10 +47,15 @@ export const usersApi = {
     name: string;
     email: string;
     password: string;
-    role: "ADMIN" | "EMPLOYEE" | "CLIENT";
+    role: Role;
     companyId?: string;
   }) => post<{ user: User }>("/api/users", data),
   remove: (id: string) => del<{ ok: boolean }>(`/api/users/${id}`),
+};
+
+/** Internal staffing list: freelancers who flagged themselves as available. */
+export const talentApi = {
+  list: () => get<{ talent: User[] }>("/api/talent"),
 };
 
 export const projectsApi = {
@@ -166,6 +172,8 @@ export const profileApi = {
   update: (data: {
     name?: string;
     avatarUrl?: string | null;
+    bio?: string | null;
+    availableForWork?: boolean;
     currentPassword?: string;
     newPassword?: string;
   }) => patch<{ user: User }>("/api/profile", data),
@@ -195,4 +203,4 @@ export const publicReportsApi = {
     post<PublicComment>(`/public/report/${token}/comments`, data),
 };
 
-export { uploadFile };
+export { uploadFile, UPLOAD_ACCEPT, AVATAR_ACCEPT };

@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { isInternalRole, isManagementRole } from "../types";
 import ThemeToggle from "./ThemeToggle";
 
 const navItems: { to: string; label: string; end?: boolean; internalOnly?: boolean }[] = [
@@ -10,10 +11,20 @@ const navItems: { to: string; label: string; end?: boolean; internalOnly?: boole
   { to: "/notifications", label: "Notifications" },
 ];
 
-const adminItems: { to: string; label: string; end?: boolean }[] = [
+const managementItems: {
+  to: string;
+  label: string;
+  end?: boolean;
+  devOnly?: boolean;
+  adminOnly?: boolean;
+}[] = [
   { to: "/companies", label: "Companies" },
   { to: "/team", label: "Team" },
-  { to: "/settings", label: "Database" },
+  { to: "/talent", label: "Talent" },
+  // The API only serves /api/settings outside production, so the link is hidden from
+  // production builds too rather than leading admins to a 404. Managers get the team
+  // and client tools but not the database settings, so it stays admin-only on top.
+  { to: "/settings", label: "Database", devOnly: true, adminOnly: true },
 ];
 
 export default function Layout() {
@@ -48,20 +59,26 @@ export default function Layout() {
         </div>
         <nav className="space-y-1">
           {navItems
-            .filter((item) => !item.internalOnly || user.role !== "CLIENT")
+            .filter((item) => !item.internalOnly || isInternalRole(user.role))
             .map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className={linkBase}>
                 {item.label}
               </NavLink>
             ))}
-          {user.role === "ADMIN" ? (
+          {isManagementRole(user.role) ? (
             <>
-              <div className="pt-3 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Admin</div>
-              {adminItems.map((item) => (
-                <NavLink key={item.to} to={item.to} end={item.end} className={linkBase}>
-                  {item.label}
-                </NavLink>
-              ))}
+              <div className="pt-3 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Management</div>
+              {managementItems
+                .filter(
+                  (item) =>
+                    (!item.adminOnly || user.role === "ADMIN") &&
+                    (!item.devOnly || import.meta.env.DEV)
+                )
+                .map((item) => (
+                  <NavLink key={item.to} to={item.to} end={item.end} className={linkBase}>
+                    {item.label}
+                  </NavLink>
+                ))}
             </>
           ) : null}
         </nav>
