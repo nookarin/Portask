@@ -12,7 +12,7 @@ RUN npm run prisma:generate
 EXPOSE 5000
 CMD ["npm", "run", "dev"]
 
-FROM deps AS build
+FROM deps AS prod
 COPY . .
 RUN npm run prisma:generate && npm run build
 RUN npm prune --omit=dev

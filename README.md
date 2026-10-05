@@ -207,7 +207,7 @@ Secrets are injected via Docker Compose or GitHub Actions secrets; the `.env` fi
 | Command                | Runs in  | Purpose                          |
 | ---------------------- | -------- | -------------------------------- |
 | `make dev`             | root     | `docker compose up -d --build`   |
-| `make prod`            | root     | `docker compose -f docker-compose.prod.yml up -d --build` |
+| `make prod`            | root     | Build images, apply pending migrations, then `docker compose -f docker-compose.prod.yml up -d` |
 | `npm run dev`          | api      | Dev server (tsx watch)           |
 | `npm run build`        | api      | Compile TypeScript               |
 | `npm run test`         | api      | Vitest + Supertest integration    |

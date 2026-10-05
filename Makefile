@@ -6,7 +6,9 @@ dev:
 	docker compose up -d --build
 
 prod:
-	docker compose -f docker-compose.prod.yml up -d --build
+	docker compose -f docker-compose.prod.yml build
+	docker compose -f docker-compose.prod.yml run --rm api npx prisma migrate deploy
+	docker compose -f docker-compose.prod.yml up -d
 
 logs:
 	docker compose logs -f
