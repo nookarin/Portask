@@ -23,7 +23,7 @@ vi.mock("../src/db.js", () => ({
 
 const { app } = await import("../src/app.js");
 
-describe("public register is client-only", () => {
+describe("public register allows CLIENT or FREELANCER only", () => {
   it("rejects role: ADMIN", async () => {
     const res = await request(app)
       .post("/api/auth/register")
@@ -50,10 +50,19 @@ describe("public register is client-only", () => {
     expect(created[0].role).toBe("CLIENT");
   });
 
-  it("requires a company", async () => {
+  it("requires a company for CLIENT", async () => {
     const res = await request(app)
       .post("/api/auth/register")
       .send({ name: "C", email: "c2@x.dev", password: "password123" });
     expect(res.status).toBe(400);
+  });
+
+  it("creates FREELANCER without a company", async () => {
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send({ name: "F", email: "f@x.dev", password: "password123", role: "FREELANCER" });
+    expect(res.status).toBe(201);
+    expect(res.body.user.role).toBe("FREELANCER");
+    expect(created.at(-1)?.companyId).toBeUndefined();
   });
 });

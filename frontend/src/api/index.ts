@@ -31,8 +31,13 @@ export const authApi = {
   me: () => get<AuthResponse>("/api/auth/me"),
   login: (email: string, password: string) =>
     post<AuthResponse>("/api/auth/login", { email, password }),
-  register: (data: { name: string; email: string; password: string; companyName: string }) =>
-    post<AuthResponse>("/api/auth/register", data),
+  register: (data: {
+    name: string;
+    email: string;
+    password: string;
+    role?: "CLIENT" | "FREELANCER";
+    companyName?: string;
+  }) => post<AuthResponse>("/api/auth/register", data),
   logout: () => post<{ ok: boolean }>("/api/auth/logout"),
 };
 

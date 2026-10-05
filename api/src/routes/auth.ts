@@ -25,15 +25,17 @@ export function sanitizeUser(user: User & { company?: { id: string; name: string
   };
 }
 
-// Public signup is client-only. Staff accounts (ADMIN/EMPLOYEE) are created by an
+// Public signup only ever mints CLIENT or FREELANCER accounts — both are
+// self-service by design. Staff accounts (ADMIN/MANAGER/EMPLOYEE) are created by an
 // existing admin via POST /api/users, or the very first admin via the image
-// bootstrap (ADMIN_EMAIL/ADMIN_PASSWORD). `role` is rejected outright rather than
-// silently dropped, so a privilege-escalation attempt fails loudly.
+// bootstrap (ADMIN_EMAIL/ADMIN_PASSWORD). Any other `role` is rejected outright
+// rather than silently dropped, so a privilege-escalation attempt fails loudly.
 const registerSchema = z
   .object({
     name: z.string().min(1).max(200),
     email: z.string().email(),
     password: z.string().min(8),
+    role: z.enum(["CLIENT", "FREELANCER"]).default("CLIENT"),
     companyName: z.string().min(1).optional(),
     companyId: z.string().optional(),
   })
@@ -45,14 +47,17 @@ const register: RequestHandler = wrap(async (req, res) => {
   const existing = await prisma.user.findUnique({ where: { email: input.email } });
   if (existing) throw new ApiError(409, "An account with this email already exists.");
 
-  if (!input.companyId && !input.companyName) {
-    throw new ApiError(400, "Client accounts must belong to a company.");
-  }
-
-  let companyId = input.companyId;
-  if (!companyId) {
-    const company = await prisma.company.create({ data: { name: input.companyName! } });
-    companyId = company.id;
+  // Freelancers aren't attached to a client company.
+  let companyId: string | undefined;
+  if (input.role === "CLIENT") {
+    if (!input.companyId && !input.companyName) {
+      throw new ApiError(400, "Client accounts must belong to a company.");
+    }
+    companyId = input.companyId;
+    if (!companyId) {
+      const company = await prisma.company.create({ data: { name: input.companyName! } });
+      companyId = company.id;
+    }
   }
 
   const passwordHash = await bcrypt.hash(input.password, 10);
@@ -61,7 +66,7 @@ const register: RequestHandler = wrap(async (req, res) => {
       name: input.name,
       email: input.email,
       passwordHash,
-      role: "CLIENT",
+      role: input.role,
       companyId,
     },
     include: { company: true },

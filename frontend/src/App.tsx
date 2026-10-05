@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { ThemeProvider } from "./theme/ThemeContext";
 import Layout from "./components/Layout";
 import { Spinner } from "./components/ui";
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -27,6 +28,7 @@ function Protected({ children }: { children: ReactNode }) {
   if (loading) return <Spinner />;
 
   if (!user) {
+    if (location.pathname === "/") return <Landing />;
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   return <>{children}</>;

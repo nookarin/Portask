@@ -11,6 +11,8 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isFreelancer, setIsFreelancer] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -18,9 +20,21 @@ export default function Register() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setBusy(true);
     try {
-      await register({ name, email, password, companyName });
+      await register({
+        name,
+        email,
+        password,
+        role: isFreelancer ? "FREELANCER" : "CLIENT",
+        companyName: isFreelancer ? undefined : companyName,
+      });
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed.");
@@ -45,8 +59,17 @@ export default function Register() {
         <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           {error ? <Alert>{error}</Alert> : null}
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            Client accounts are created here. If you are an agency, ask your administrator for an invite.
+            Client and freelancer accounts are created here. If you are agency staff, ask your administrator for an invite.
           </p>
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+            <input
+              type="checkbox"
+              checked={isFreelancer}
+              onChange={(e) => setIsFreelancer(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-700"
+            />
+            I'm a freelancer, not signing up on behalf of a company
+          </label>
           <div>
             <Label>Full name</Label>
             <input className={formClass} required value={name} onChange={(e) => setName(e.target.value)} />
@@ -75,15 +98,29 @@ export default function Register() {
             />
           </div>
           <div>
-            <Label>Company name</Label>
+            <Label>Confirm password</Label>
             <input
               className={formClass}
+              type="password"
               required
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Acme Inc."
+              minLength={8}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter your password"
             />
           </div>
+          {!isFreelancer ? (
+            <div>
+              <Label>Company name</Label>
+              <input
+                className={formClass}
+                required={!isFreelancer}
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Acme Inc."
+              />
+            </div>
+          ) : null}
           <Button type="submit" disabled={busy} className="w-full">
             {busy ? "Creating account…" : "Create account"}
           </Button>
