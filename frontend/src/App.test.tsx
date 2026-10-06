@@ -51,9 +51,15 @@ afterEach(() => {
 });
 
 describe("App routing", () => {
-  it("redirects unauthenticated users to /login", async () => {
+  it("shows the landing page to unauthenticated users at /", async () => {
     vi.spyOn(authApi, "me").mockRejectedValueOnce(new Error("401"));
     renderAt("/");
+    expect(await screen.findByText(/Agency project tracking/i)).toBeInTheDocument();
+  });
+
+  it("redirects unauthenticated users to /login", async () => {
+    vi.spyOn(authApi, "me").mockRejectedValueOnce(new Error("401"));
+    renderAt("/projects");
     expect(await screen.findByText(/Sign in to Portask/i)).toBeInTheDocument();
   });
 

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import rateLimit from "express-rate-limit";
 import { prisma } from "../db.js";
+import { env } from "../env.js";
 import { ApiError, wrap } from "../lib/errors.js";
 import { requireAuth, requireInternal } from "../middleware/auth.js";
 import { generatePublicToken, hashIp, resolvePublicReport } from "../lib/publicToken.js";
@@ -239,6 +240,9 @@ const publicCommentLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many comments from this connection. Try again later." },
+  // Tests reuse one IP across the whole file, so this per-IP budget would throttle
+  // unrelated cases. The per-report, per-IP-hour limit below still returns 429.
+  skip: () => env.NODE_ENV === "test",
 });
 
 const publicViewLimiter = rateLimit({
