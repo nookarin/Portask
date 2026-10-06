@@ -1,6 +1,13 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
 import { Badge, Button, Card } from "../components/ui";
+import heroImage1 from "../../assets/hero-1.jpg";
+import heroImage2 from "../../assets/hero-2.jpg";
+import heroImage3 from "../../assets/hero-3.jpg";
+
+const heroImages = [heroImage1, heroImage2, heroImage3];
+const HERO_ROTATE_MS = 6000;
 
 const features: { title: string; body: string }[] = [
   {
@@ -49,41 +56,82 @@ function initials(name: string): string {
 }
 
 export default function Landing() {
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setHeroIndex((i) => (i + 1) % heroImages.length);
+    }, HERO_ROTATE_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setScrollY(window.scrollY);
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 font-bold text-white">P</div>
-          <span className="text-lg font-bold text-slate-800 dark:text-slate-100">Portask</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Link to="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">
-            Sign in
-          </Link>
-          <Link to="/register">
-            <Button>Get started</Button>
-          </Link>
+      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-slate-50/90 backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/90">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 font-bold text-white">P</div>
+            <span className="text-lg font-bold text-slate-800 dark:text-slate-100">Portask</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link to="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">
+              Sign in
+            </Link>
+            <Link to="/register">
+              <Button>Get started</Button>
+            </Link>
+          </div>
         </div>
       </header>
 
       <main>
-        <section className="mx-auto max-w-6xl px-4 pb-16 pt-12 text-center sm:pt-20">
-          <Badge tone="purple">Agency project tracking</Badge>
-          <h1 className="mx-auto mt-5 max-w-3xl text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
-            Project delivery your clients can actually see.
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-slate-600 dark:text-slate-300">
-            Portask keeps projects, deliverables, and client communication in one place — with
-            shareable progress reports that don't require your clients to sign in.
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <Link to="/register">
-              <Button className="px-6 py-3 text-base">Get started free</Button>
-            </Link>
-            <Link to="/login">
-              <Button variant="secondary" className="px-6 py-3 text-base">Sign in</Button>
-            </Link>
+        <section className="relative overflow-hidden px-4 pb-16 pt-12 text-center sm:pt-20">
+          {heroImages.map((src, i) => (
+            <div
+              key={src}
+              className="absolute inset-x-0 -top-1/4 h-[150%] bg-cover bg-center transition-opacity duration-1000 ease-in-out"
+              style={{
+                backgroundImage: `url(${src})`,
+                opacity: i === heroIndex ? 1 : 0,
+                transform: `translateY(${scrollY * 0.3}px)`,
+              }}
+            />
+          ))}
+          <div className="absolute inset-0 bg-slate-950/70" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-slate-50 dark:to-slate-950" />
+          <div className="relative mx-auto max-w-6xl">
+            <Badge tone="purple">Agency project tracking</Badge>
+            <h1 className="mx-auto mt-5 max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              Project delivery your clients can actually see.
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-lg text-slate-200">
+              Portask keeps projects, deliverables, and client communication in one place — with
+              shareable progress reports that don't require your clients to sign in.
+            </p>
+            <div className="mt-8 flex items-center justify-center gap-3">
+              <Link to="/register">
+                <Button className="px-6 py-3 text-base">Get started free</Button>
+              </Link>
+              <Link to="/login">
+                <Button variant="secondary" className="px-6 py-3 text-base">Sign in</Button>
+              </Link>
+            </div>
           </div>
         </section>
 
