@@ -209,6 +209,10 @@ Things to know about a path mount:
 - Other apps on the same origin share its `localStorage` (the theme preference is stored there).
 - Anything stored before the move (uploads) keeps working: upload links are saved as `/uploads/...` and the frontend adds the prefix when it renders them.
 
+### Updating a NAS deployment
+
+`update.sh` (repo root) pulls the latest `main` from GitHub without needing git, backs up the bundled database to `backups/`, rebuilds, runs `prisma migrate deploy` and restarts. It exits immediately when nothing changed, so it is safe on a daily schedule. On Synology: Control Panel → Task Scheduler → Create → User-defined script, run as `root`, command `bash /volume1/docker/portask/update.sh`. Edit `APP` and `HEALTH` at the top of the script to match your folder and `FRONTEND_BIND`. Output goes to `update.log`.
+
 ### The runtime database switcher
 
 `/api/settings` (admin nav → **Database**) repoints the running app at another connection string and pushes the schema onto it with `prisma db push`. That is a development tool, and it is compiled out of production:
