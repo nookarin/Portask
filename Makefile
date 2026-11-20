@@ -10,6 +10,11 @@ prod:
 	docker compose -f docker-compose.prod.yml run --rm api npx prisma migrate deploy
 	docker compose -f docker-compose.prod.yml up -d
 
+prod-local-db:
+	docker compose -f docker-compose.prod.yml -f docker-compose.local-db.yml build
+	docker compose -f docker-compose.prod.yml -f docker-compose.local-db.yml run --rm api npx prisma migrate deploy
+	docker compose -f docker-compose.prod.yml -f docker-compose.local-db.yml up -d
+
 logs:
 	docker compose logs -f
 

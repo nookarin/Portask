@@ -1,3 +1,5 @@
+# All persistent state (database, uploads, API data) lives under ./data, next to this
+# file, so backing up or moving a deployment means copying that one folder.
 services:
   db:
     image: postgres:16-alpine
@@ -6,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portask}
       POSTGRES_DB: portask
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U portask -d portask"]
       interval: 10s
@@ -35,8 +37,8 @@ services:
       # Set to false only for an intentionally plain-HTTP deployment.
       COOKIE_SECURE: ${COOKIE_SECURE:-}
     volumes:
-      - uploads:/app/uploads
-      - api-data:/app/data
+      - ./data/uploads:/app/uploads
+      - ./data/api:/app/data
     depends_on:
       db:
         condition: service_healthy
@@ -59,8 +61,3 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
-
-volumes:
-  pgdata:
-  uploads:
-  api-data:

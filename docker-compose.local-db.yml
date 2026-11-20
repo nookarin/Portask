@@ -1,0 +1,19 @@
+# Overlay for docker-compose.prod.yml: use a Postgres you already run (on this machine or
+# elsewhere) instead of the bundled `db` container.
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.local-db.yml up -d
+#
+# Set LOCAL_DATABASE_URL in .env. To reach a database on the Docker host use the
+# `host.docker.internal` name, e.g.
+#   LOCAL_DATABASE_URL=postgresql://user:password@host.docker.internal:5432/portask
+services:
+  # Only starts if someone passes `--profile bundled-db`.
+  db:
+    profiles: ["bundled-db"]
+
+  api:
+    environment:
+      DATABASE_URL: ${LOCAL_DATABASE_URL:?set LOCAL_DATABASE_URL to your Postgres connection string}
+    depends_on: !reset {}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

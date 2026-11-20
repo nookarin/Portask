@@ -158,6 +158,20 @@ docker compose -f docker-compose.prod.yml run --rm api \
 
 `resolve --applied` only records the migration in `_prisma_migrations`; it does not touch your tables. Run it once, before the first `migrate deploy`, against any database that predates the migrations directory. Skip it if production has never been deployed — a fresh database simply replays the migrations from empty.
 
+### Using your own Postgres with the Docker image
+
+By default `docker-compose.prod.yml` runs a bundled Postgres container (data in `./data/postgres`). To use a Postgres you already run, such as one on the Docker host, add the overlay `docker-compose.local-db.yml`:
+
+```bash
+# .env
+LOCAL_DATABASE_URL=postgresql://user:password@host.docker.internal:5432/portask
+
+make prod-local-db
+# or: docker compose -f docker-compose.prod.yml -f docker-compose.local-db.yml up -d
+```
+
+The overlay turns the bundled `db` service off (it only starts with `--profile bundled-db`), drops the API's dependency on it and points `DATABASE_URL` at `LOCAL_DATABASE_URL`. `host.docker.internal` resolves to the host on Docker Desktop and, through `host-gateway`, on Linux. The database must already exist, and your Postgres must accept connections from the Docker network (`listen_addresses` and a matching `pg_hba.conf` entry). Uploads still live in `./data/uploads`.
+
 ### The runtime database switcher
 
 `/api/settings` (admin nav → **Database**) repoints the running app at another connection string and pushes the schema onto it with `prisma db push`. That is a development tool, and it is compiled out of production:
