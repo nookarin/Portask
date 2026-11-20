@@ -14,6 +14,8 @@ services:
   api:
     environment:
       DATABASE_URL: ${LOCAL_DATABASE_URL:?set LOCAL_DATABASE_URL to your Postgres connection string}
-    depends_on: !reset {}
+    depends_on:
+      db:
+        required: false
     extra_hosts:
       - "host.docker.internal:host-gateway"

@@ -59,7 +59,9 @@ services:
         VITE_BASE_PATH: ${BASE_PATH:-}
     image: ghcr.io/${IMAGE_NAMESPACE:-portask}/portask-frontend:${IMAGE_TAG:-latest}
     ports:
-      - "80:80"
+      # Override with FRONTEND_BIND=127.0.0.1:8080 to keep it off the network when a
+      # tunnel or reverse proxy on this host fronts it.
+      - "${FRONTEND_BIND:-80}:80"
     depends_on:
       api:
         condition: service_healthy

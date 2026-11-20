@@ -170,7 +170,7 @@ make prod-local-db
 # or: docker compose -f docker-compose.prod.yml -f docker-compose.local-db.yml up -d
 ```
 
-The overlay turns the bundled `db` service off (it only starts with `--profile bundled-db`), drops the API's dependency on it and points `DATABASE_URL` at `LOCAL_DATABASE_URL`. `host.docker.internal` resolves to the host on Docker Desktop and, through `host-gateway`, on Linux. The database must already exist, and your Postgres must accept connections from the Docker network (`listen_addresses` and a matching `pg_hba.conf` entry). Uploads still live in `./data/uploads`.
+The overlay turns the bundled `db` service off (it only starts with `--profile bundled-db`), makes the API's dependency on it optional and points `DATABASE_URL` at `LOCAL_DATABASE_URL`. `host.docker.internal` resolves to the host on Docker Desktop and, through `host-gateway`, on Linux. The database must already exist, and your Postgres must accept connections from the Docker network (`listen_addresses` and a matching `pg_hba.conf` entry). Uploads still live in `./data/uploads`.
 
 ### Deploying on a NAS at `https://nookarin.dev/portask` (Cloudflare Tunnel)
 
@@ -190,6 +190,7 @@ The app is served under the `/portask` prefix, so it is built with `BASE_PATH=/p
    FRONTEND_URL=https://nookarin.dev     # origin only, no /portask
    BASE_PATH=/portask
    TRUST_PROXY=2                         # nginx + cloudflared
+   FRONTEND_BIND=127.0.0.1:8080          # not reachable from the LAN, only via the tunnel
    TUNNEL_TOKEN=<from step 1>
    ```
 3. From that folder, over SSH:
@@ -200,7 +201,7 @@ The app is served under the `/portask` prefix, so it is built with `BASE_PATH=/p
    ```
 4. Open `https://nookarin.dev/portask` and sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Public report links look like `https://nookarin.dev/portask/r/<token>`.
 
-All state is in `./data` beside the compose file, so back that folder up (Synology Hyper Backup works). Leave `COOKIE_SECURE` unset: Cloudflare reports HTTPS and the session cookie is marked Secure. The overlay publishes no host ports, so it does not clash with DSM's own web server on 80/443. It can be combined with `docker-compose.local-db.yml`.
+All state is in `./data` beside the compose file, so back that folder up (Synology Hyper Backup works). Leave `COOKIE_SECURE` unset: Cloudflare reports HTTPS and the session cookie is marked Secure. With `FRONTEND_BIND=127.0.0.1:8080` the app only listens on the NAS's loopback, so it does not clash with DSM's web server on 80/443 and is not reachable from the LAN except through the tunnel. It can be combined with `docker-compose.local-db.yml`.
 
 Things to know about a path mount:
 

@@ -4,15 +4,13 @@
 #
 #   docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml up -d
 #
+# Set FRONTEND_BIND=127.0.0.1:8080 so nothing is reachable on the LAN except through
+# the tunnel (the frontend is then reached by the tunnel as http://frontend:80).
 # Set TUNNEL_TOKEN, FRONTEND_URL=https://your.domain and TRUST_PROXY=2 in .env.
 # To serve under a path (https://your.domain/portask) also set BASE_PATH=/portask.
 # In the tunnel's "Public hostname" settings point your domain (and path) at
 # http://frontend:80
 services:
-  frontend:
-    # Reached only through the tunnel, so nothing is published on the host.
-    ports: !reset []
-
   cloudflared:
     image: cloudflare/cloudflared:latest
     command: tunnel --no-autoupdate run
