@@ -172,6 +172,42 @@ make prod-local-db
 
 The overlay turns the bundled `db` service off (it only starts with `--profile bundled-db`), drops the API's dependency on it and points `DATABASE_URL` at `LOCAL_DATABASE_URL`. `host.docker.internal` resolves to the host on Docker Desktop and, through `host-gateway`, on Linux. The database must already exist, and your Postgres must accept connections from the Docker network (`listen_addresses` and a matching `pg_hba.conf` entry). Uploads still live in `./data/uploads`.
 
+### Deploying on a NAS at `https://nookarin.dev/portask` (Cloudflare Tunnel)
+
+This path needs no router port forwarding and works behind CGNAT or a changing home IP. Prerequisites: the domain `nookarin.dev` with its nameservers on Cloudflare (free plan is enough) and Docker on the NAS (Synology: Container Manager, DSM 7.2+).
+
+The app is served under the `/portask` prefix, so it is built with `BASE_PATH=/portask`. That prefix is baked into the frontend at build time (asset URLs, router, API calls, upload and report links). Changing it later means rebuilding the frontend image.
+
+> **Check the root of `nookarin.dev` first.** Creating the tunnel hostname points the `nookarin.dev` DNS record at the tunnel. If another site already lives at `https://nookarin.dev/`, it would stop being served unless you also route it through the tunnel (add a second public hostname rule for `nookarin.dev` without a path, placed *after* the `/portask` rule, that points at wherever that site runs). If you do not want to touch the root, use a subdomain such as `portask.nookarin.dev` instead and leave `BASE_PATH` empty.
+
+1. In Cloudflare **Zero Trust → Networks → Tunnels**, create a tunnel and copy its token. Add a **public hostname**: domain `nookarin.dev`, path `^/portask`, service type `HTTP`, URL `frontend:80`.
+2. Put the project folder on a NAS volume (e.g. `/volume1/docker/portask`) and create `.env` there:
+   ```bash
+   JWT_SECRET=<long random string>
+   ADMIN_EMAIL=you@example.com
+   ADMIN_PASSWORD=<strong password>
+   POSTGRES_PASSWORD=<strong password>
+   FRONTEND_URL=https://nookarin.dev     # origin only, no /portask
+   BASE_PATH=/portask
+   TRUST_PROXY=2                         # nginx + cloudflared
+   TUNNEL_TOKEN=<from step 1>
+   ```
+3. From that folder, over SSH:
+   ```bash
+   docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml build
+   docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml run --rm api npx prisma migrate deploy
+   docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml up -d
+   ```
+4. Open `https://nookarin.dev/portask` and sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Public report links look like `https://nookarin.dev/portask/r/<token>`.
+
+All state is in `./data` beside the compose file, so back that folder up (Synology Hyper Backup works). Leave `COOKIE_SECURE` unset: Cloudflare reports HTTPS and the session cookie is marked Secure. The overlay publishes no host ports, so it does not clash with DSM's own web server on 80/443. It can be combined with `docker-compose.local-db.yml`.
+
+Things to know about a path mount:
+
+- The session cookie is set with `Path=/`, so the browser also sends it to other apps on `nookarin.dev`. It is `HttpOnly` and `Secure`, but do not host an untrusted app on the same domain.
+- Other apps on the same origin share its `localStorage` (the theme preference is stored there).
+- Anything stored before the move (uploads) keeps working: upload links are saved as `/uploads/...` and the frontend adds the prefix when it renders them.
+
 ### The runtime database switcher
 
 `/api/settings` (admin nav → **Database**) repoints the running app at another connection string and pushes the schema onto it with `prisma db push`. That is a development tool, and it is compiled out of production:

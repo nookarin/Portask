@@ -2,6 +2,8 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // Mount point, e.g. VITE_BASE_PATH=/portask to serve under https://host/portask/.
+  base: process.env.VITE_BASE_PATH ? `/${process.env.VITE_BASE_PATH.replace(/^\/+|\/+$/g, "")}/` : "/",
   plugins: [react()],
   server: {
     host: true,

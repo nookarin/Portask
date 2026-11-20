@@ -1,3 +1,4 @@
+import { withBase } from "../basePath";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { publicReportsApi } from "../api";
@@ -140,7 +141,7 @@ export default function PublicReport() {
                       </p>
                       {update.fileUrl ? (
                         <a
-                          href={update.fileUrl}
+                          href={withBase(update.fileUrl)}
                           className="mt-2 inline-block text-sm font-medium text-brand-600 hover:underline dark:text-brand-400"
                         >
                           View attachment
@@ -173,7 +174,7 @@ export default function PublicReport() {
                       ) : null}
                       {deliverable.fileUrl ? (
                         <a
-                          href={deliverable.fileUrl}
+                          href={withBase(deliverable.fileUrl)}
                           className="mt-2 inline-block text-sm font-medium text-brand-600 hover:underline dark:text-brand-400"
                         >
                           Download

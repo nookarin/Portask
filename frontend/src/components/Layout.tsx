@@ -1,3 +1,4 @@
+import { withBase } from "../basePath";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { isInternalRole, isManagementRole } from "../types";
@@ -99,7 +100,7 @@ export default function Layout() {
               </div>
               {user.avatarUrl ? (
                 <img
-                  src={user.avatarUrl}
+                  src={withBase(user.avatarUrl)}
                   alt={user.name}
                   className="h-9 w-9 rounded-full border border-slate-200 object-cover dark:border-slate-700"
                 />

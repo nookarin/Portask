@@ -1,3 +1,4 @@
+import { BASE } from "../basePath";
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { projectsApi, reportsApi } from "../api";
@@ -83,7 +84,7 @@ export default function Reports() {
                   {report.enabled ? "Revoke link" : "Enable link"}
                 </Button>
                 <a
-                  href={`/r/${report.token}`}
+                  href={`${BASE}/r/${report.token}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400"
@@ -239,7 +240,7 @@ function ReportEditor({
   const [comments, setComments] = useState<PublicComment[]>([]);
   const [savingCuration, setSavingCuration] = useState(false);
 
-  const publicUrl = `${window.location.origin}/r/${report.token}`;
+  const publicUrl = `${window.location.origin}${BASE}/r/${report.token}`;
 
   const load = useCallback(async () => {
     setLoading(true);

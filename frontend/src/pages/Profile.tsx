@@ -1,3 +1,4 @@
+import { withBase } from "../basePath";
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { AVATAR_ACCEPT, profileApi, uploadFile } from "../api";
@@ -127,7 +128,7 @@ export default function Profile() {
         <div className="flex items-center gap-5">
           {avatarUrl ? (
             <img
-              src={avatarUrl}
+              src={withBase(avatarUrl)}
               alt={user.name}
               className="h-20 w-20 rounded-full border border-slate-200 object-cover dark:border-slate-700"
             />

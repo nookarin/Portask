@@ -1,3 +1,5 @@
+import { BASE } from "../basePath";
+
 export class ApiError extends Error {
   status: number;
 
@@ -8,7 +10,7 @@ export class ApiError extends Error {
   }
 }
 
-const API_URL = import.meta.env.VITE_API_URL ?? "";
+const API_URL = import.meta.env.VITE_API_URL ?? BASE;
 
 // Mirrors the server's allowlist in api/src/routes/upload.ts. The server is what
 // enforces it — these only keep the file picker from offering choices that would be

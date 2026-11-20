@@ -54,6 +54,9 @@ services:
     build:
       context: ./frontend
       target: prod
+      args:
+        # Mount point, e.g. /portask to serve at https://your.domain/portask/. Empty = root.
+        VITE_BASE_PATH: ${BASE_PATH:-}
     image: ghcr.io/${IMAGE_NAMESPACE:-portask}/portask-frontend:${IMAGE_TAG:-latest}
     ports:
       - "80:80"

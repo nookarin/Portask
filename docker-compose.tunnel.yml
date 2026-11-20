@@ -1,0 +1,23 @@
+# Overlay for docker-compose.prod.yml: publish the app on your own domain through a
+# Cloudflare Tunnel. No router port forwarding, no host ports 80/443, HTTPS is
+# terminated by Cloudflare.
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.tunnel.yml up -d
+#
+# Set TUNNEL_TOKEN, FRONTEND_URL=https://your.domain and TRUST_PROXY=2 in .env.
+# To serve under a path (https://your.domain/portask) also set BASE_PATH=/portask.
+# In the tunnel's "Public hostname" settings point your domain (and path) at
+# http://frontend:80
+services:
+  frontend:
+    # Reached only through the tunnel, so nothing is published on the host.
+    ports: !reset []
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN from the Cloudflare Zero Trust tunnel page}
+    depends_on:
+      - frontend
+    restart: unless-stopped

@@ -1,3 +1,4 @@
+import { withBase } from "../basePath";
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { useParams } from "react-router-dom";
@@ -488,7 +489,7 @@ function UpdateCard({ update, onChanged }: { update: ProjectUpdate; onChanged: (
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{update.progress}%</span>
       </div>
       {update.fileUrl ? (
-        <a href={update.fileUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-brand-600 dark:text-brand-400 hover:underline">
+        <a href={withBase(update.fileUrl)} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-brand-600 dark:text-brand-400 hover:underline">
           📎 View attachment
         </a>
       ) : null}
@@ -623,7 +624,7 @@ function DeliverableCard({
       ) : null}
       <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
         {deliverable.fileUrl ? (
-          <a href={deliverable.fileUrl} target="_blank" rel="noreferrer" className="text-brand-600 dark:text-brand-400 hover:underline">
+          <a href={withBase(deliverable.fileUrl)} target="_blank" rel="noreferrer" className="text-brand-600 dark:text-brand-400 hover:underline">
             View file
           </a>
         ) : null}
